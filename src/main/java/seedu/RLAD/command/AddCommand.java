@@ -4,6 +4,9 @@ import seedu.RLAD.TransactionManager;
 import seedu.RLAD.Ui;
 import java.util.HashMap;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class AddCommand extends Command {
     public AddCommand(String rawArgs) {
@@ -104,6 +107,23 @@ public class AddCommand extends Command {
         }
     }
 
+    private double convertAmount(String amountStr) throws RLADException {
+        try {
+            return Double.parseDouble(amountStr);   //Code that may cause an exception
+        } catch (NumberFormatException e) {
+            throw new RLADException("Invalid amount format. Please enter a valid number (e.g., 15.50)");    //Code to execute if the exception is true
+        }
+    }
+
+    private LocalDate convertDate(String dateStr) throws RLADException {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            return LocalDate.parse(dateStr, formatter);
+        } catch (DateTimeParseException e) {
+            throw new RLADException("Invalid date format. Please use yyyy-MM-dd (e.g., 2026-02-18)");
+        }
+    }
+
     @Override
     public void execute(TransactionManager transactions, Ui ui) {
         // TODO: Use a tokenizer or regex to extract --type, --amount, --category, --date, and --description.
@@ -111,7 +131,8 @@ public class AddCommand extends Command {
         // TODO: Validate that mandatory fields (--type, --amount, --date) are present.
         validateRequiredFields(parsedArgs);
         // TODO: Convert the amount string to double and date string to LocalDate.
-
+        double amount = convertAmount(parsedArgs.get("--amount"));
+        LocalDate date = convertDate(parsedArgs.get("--date"));
         // TODO: Create a new Transaction object and add it via transactions.addTransaction().
         // TODO: Provide success feedback to the user via ui.showResult().
         ui.showResult("Validation passed! Required fields are present.");
