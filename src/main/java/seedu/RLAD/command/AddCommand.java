@@ -1,7 +1,10 @@
 package seedu.RLAD.command;
 
 import seedu.RLAD.TransactionManager;
+import seedu.RLAD.Transaction
 import seedu.RLAD.Ui;
+import seedu.RLAD.exception.RLADException;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.time.LocalDate;
@@ -13,7 +16,13 @@ public class AddCommand extends Command {
         super(rawArgs);
     }
 
-    //Declare a parseArgument method
+    /**
+     * Parses the raw argument string to extract flag-value pairs.
+     * Handles quoted values (like descriptions with spaces).
+     *
+     * @param rawArgs The raw input string (e.g., "--type debit --amount 15.50 --date 2026-02-18")
+     * @return A Map with flag names as keys and their values as strings
+     */
     private Map<String, String> parseArguments(String rawArgs) {
         Map<String, String> argsMap = new HashMap<>();
 
@@ -88,6 +97,13 @@ public class AddCommand extends Command {
         return argsMap;
     }
 
+    /**
+     * Validates that all required fields are present and non-empty.
+     * Also validates that type is either "debit" or "credit".
+     *
+     * @param parsedArgs The map of parsed arguments
+     * @throws RLADException if any required field is missing or invalid
+     */
     private void validateRequiredFields(Map<String, String> parsedArgs) throws RLADException {
         // Only validates the necessary fields except category and description
         String[] requiredFields = {"--type", "--amount", "--date"};
@@ -100,13 +116,21 @@ public class AddCommand extends Command {
             }
         }
 
-        //Optional: Validate that --type is either "debit" or "credit"
+        //Validate that --type is either "debit" or "credit"
         String type = parsedArgs.get("--type");
         if (!type.equals("debit") && !type.equals("credit")) {
             throw new RLADException("Invalid --type. Must be either 'debit' or 'credit'");
         }
     }
 
+    /**
+     * Converts a string amount to a double.
+     * Validates that amount is positive and rounds to 2 decimal places.
+     *
+     * @param amountStr The amount as a string
+     * @return The amount as a double
+     * @throws RLADException if the amount format is invalid
+     */
     private double convertAmount(String amountStr) throws RLADException {
         try {
             return Double.parseDouble(amountStr);   //Code that may cause an exception
@@ -115,6 +139,14 @@ public class AddCommand extends Command {
         }
     }
 
+    /**
+     * Converts a string date to a LocalDate object.
+     * Expected format: yyyy-MM-dd
+     *
+     * @param dateStr The date as a string
+     * @return The date as a LocalDate
+     * @throws RLADException if the date format is invalid
+     */
     private LocalDate convertDate(String dateStr) throws RLADException {
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -127,20 +159,51 @@ public class AddCommand extends Command {
     @Override
     public void execute(TransactionManager transactions, Ui ui) {
         // TODO: Use a tokenizer or regex to extract --type, --amount, --category, --date, and --description.
+        // Step 1: Parse
         Map<String, String> parsedArgs = parseArguments(rawArgs);
+
         // TODO: Validate that mandatory fields (--type, --amount, --date) are present.
+        // Step 2: Validate required fields
         validateRequiredFields(parsedArgs);
+
         // TODO: Convert the amount string to double and date string to LocalDate.
+        // Step 3: Convert data types
         double amount = convertAmount(parsedArgs.get("--amount"));
         LocalDate date = convertDate(parsedArgs.get("--date"));
+
+        // Step 4: Get all fields (optional fields may be null)
+        String type = parsedArgs.get("--type");
+        String category = parsedArgs.get("--category");  // May be null
+        String description = parsedArgs.get("--description");  // May be null
+
         // TODO: Create a new Transaction object and add it via transactions.addTransaction().
+        // Step 5: Create Transaction object
+        // Note: category and description can be null
+        Transaction newTransaction = new Transaction(type, category, amount, date, description);
+
+        // Step 6: Add to TransactionManager
+        transactions.addTransaction(newTransaction);
+
         // TODO: Provide success feedback to the user via ui.showResult().
-        ui.showResult("Validation passed! Required fields are present.");
+        // Step 7: Show success message with the hashId
+        String successMessage = String.format(
+                "✅ Transaction added successfully!\n   HashID: %s\n   %s: $%.2f on %s\n   Category: %s\n   Description: %s",
+                newTransaction.getHashId(),
+                type.toUpperCase(),
+                amount,
+                date,
+                category != null ? category : "(none)",
+                description != null ? "\"" + description + "\"" : "(none)"
+        );
+        ui.showResult(successMessage);
     }
 
     @Override
     public boolean hasValidArgs() {
         // TODO: Check if rawArgs contains the required flags to prevent runtime RLADExceptions.
-        return true;
+        return rawArgs != null &&
+                rawArgs.contains("--type") &&
+                rawArgs.contains("--amount") &&
+                rawArgs.contains("--date");
     }
 }
