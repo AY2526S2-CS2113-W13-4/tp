@@ -32,8 +32,7 @@ import java.util.ArrayList;
  *             FilterCommand.buildPredicate() for filtered summaries
  *
  * NOTE: FilterCommand is NOT a command the user types. It is a helper class
- * that provides filtering logic (Predicate<Transaction>) used by ListCommand
- * and SummarizeCommand.
+ * that provides filtering logic used by ListCommand and SummarizeCommand.
  */
 
 public class TransactionManager {

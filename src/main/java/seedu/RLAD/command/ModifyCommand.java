@@ -1,6 +1,5 @@
 package seedu.RLAD.command;
 
-import seedu.RLAD.Transaction;
 import seedu.RLAD.TransactionManager;
 import seedu.RLAD.Ui;
 import seedu.RLAD.exception.RLADException;

@@ -27,7 +27,7 @@ public class FilterCommand extends Command {
      * - --date-from (range start) day.month.year
      * - --date-to (range end) format day.month.year
      *
-     * @return Predicate<Transaction> that can be used to filter transactions
+     * @return Predicate that can be used to filter transactions
      */
     public static Predicate<Transaction> buildPredicate(String rawArgs) {
         // TODO: Implement predicate building logic
