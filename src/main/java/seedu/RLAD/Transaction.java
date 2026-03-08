@@ -24,6 +24,27 @@ public class Transaction {
 
     public String getHashId() { return hashId; }
 
+    // Add these getter methods
+    public String getType() {
+        return type;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
     @Override
     public String toString() {
         return String.format("[%s] %s | %s | $%.2f | %s | %s",
