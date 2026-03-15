@@ -118,3 +118,4 @@ public class MonthlyBudget {
     public int getBudgetedCategoryCount() {
         return categoryBudgets.size();
     }
+}
