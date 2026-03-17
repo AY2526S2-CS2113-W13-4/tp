@@ -9,9 +9,9 @@ import java.util.logging.Logger;
  * Supports sorting by amount or date in ascending or descending order.
  */
 public class TransactionSorter {
-    private static final Logger logger = Logger.getLogger(TransactionSorter.class.getName());
     public static final String SORT_BY_AMOUNT = "amount";
     public static final String SORT_BY_DATE = "date";
+    private static final Logger logger = Logger.getLogger(TransactionSorter.class.getName());
 
     /**
      * Sorts the given list of transactions by the specified field in ascending order.
