@@ -23,20 +23,29 @@ import java.time.YearMonth;
  *   │     └─> deleteTransaction(id) : Removes transaction from storage
  *   │
  *   ├─ ListCommand
- *   │     └─> getTransactions() : Retrieves all transactions, applies sorting
+ *   │     └─> getTransactions() : Retrieves all transactions, applies sorting and filtering
  *   │
  *   ├─ FilterCommand
  *   │     └─> getTransactions() : Retrieves all, applies buildPredicate() + sorting
  *   │
- *   ├─ SortCommand
- *   │     └─> setGlobalSort() / clearGlobalSort() : Manages global sort state
- *   │
  *   ├─ ModifyCommand
  *   │     ├─> findTransaction(id) : Locates transaction to modify
- *   │     └─> updateTransaction(id, updated) : Replaces old transaction
+ *   │     └─> updateTransaction(id, updated) : Replaces old transaction with new data
  *   │
- *   └─ SummarizeCommand
- *         └─> getTransactions() : Retrieves all for summaries
+ *   ├─ SummarizeCommand
+ *   │     └─> getTransactions() : Retrieves all transactions for generating summaries
+ *   │
+ *   └─ Budget Integration
+ *         ├─> setBudgetManager(budgetManager) : Sets reference for budget tracking
+ *         ├─> addTransaction(t) : Notifies BudgetManager of new transaction
+ *         ├─> deleteTransaction(id) : Notifies BudgetManager of deleted transaction
+ *         └─> updateTransaction(id, updated) : Notifies BudgetManager of updated transaction
+ *
+ * NOTE: Filtering logic is handled by FilterCommand.buildPredicate(), which is used by
+ * ListCommand and SummarizeCommand to filter transactions before display/summary.
+ *
+ * NOTE: BudgetManager is notified of all transaction changes to maintain accurate
+ * budget tracking and trigger notifications when budget thresholds are crossed.
  */
 
 public class TransactionManager {
