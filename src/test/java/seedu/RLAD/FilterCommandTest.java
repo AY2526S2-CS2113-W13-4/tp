@@ -386,4 +386,36 @@ class FilterCommandTest {
         ArrayList<Transaction> results = applyDateFilter("--category food --date-from yesterday");
         assertEquals(2, results.size());
     }
+
+    @Test
+    public void buildPredicate_dateFromLastYear_filtersCorrectly() {
+        ArrayList<Transaction> results = applyDateFilter("--date-from last-year");
+        assertEquals(4, results.size());
+    }
+
+    @Test
+    public void buildPredicate_dateToRelativeKeyword_filtersCorrectly() {
+        ArrayList<Transaction> results = applyDateFilter("--date-to yesterday");
+        for (Transaction t : results) {
+            assertFalse(t.getDate().isAfter(LocalDate.now().minusDays(1)));
+        }
+    }
+
+    @Test
+    public void buildPredicate_dateFromInvalidString_throwsException() {
+        assertThrows(RLADException.class,
+                () -> FilterCommand.buildPredicate("--date-from garbage"));
+    }
+
+    @Test
+    public void buildPredicate_categoryMultipleWithEmptyEntries_matchesValidOnes() {
+        ArrayList<Transaction> results = applyCategoryFilter("--category food,,transport");
+        assertEquals(4, results.size());
+    }
+
+    @Test
+    public void buildPredicate_categoryNoMatch_returnsEmpty() {
+        ArrayList<Transaction> results = applyCategoryFilter("--category nonexistent");
+        assertEquals(0, results.size());
+    }
 }
