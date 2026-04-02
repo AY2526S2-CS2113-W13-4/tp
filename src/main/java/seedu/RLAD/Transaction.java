@@ -31,7 +31,7 @@ public class Transaction {
     }
 
     public String getCategory() {
-        return category;
+        return category != null ? category : "";
     }
 
     public double getAmount() {
@@ -54,7 +54,11 @@ public class Transaction {
 
     // TODO: Generate a new 4-character substring of a UUID.
     // Ensure this remains consistent with the initial ID generation logic in the constructor.
+    public void setHashId(String hashId) {
+        this.hashId = hashId;
+    }
+
     public void regenerateHashId() {
-        // this.hashId = ... (Note: hashId needs to be non-final for this to work)
+        this.hashId = UUID.randomUUID().toString().substring(0, 4);
     }
 }
