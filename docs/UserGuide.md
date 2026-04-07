@@ -69,8 +69,11 @@ RLAD is best suited for NUS students or young professionals who are comfortable 
 | budget     | Set, view, edit, or delete monthly category budgets      |
 | export     | Export all transactions to a CSV file                    |
 | import     | Import transactions from a CSV file (replace or merge)   |
+| filter     | Display transactions matching filter criteria            |
+| search     | Search transactions by keyword                           |
 | clear      | Permanently delete all transactions                      |
-| help       | Print usage instructions                                 |
+| help       | Show usage instructions for commands                     |
+| exit       | Exit the application                                     |
 |------------|----------------------------------------------------------|
 
 ---
@@ -91,7 +94,7 @@ add --type TYPE --amount AMOUNT --date DATE [--category CATEGORY] [--description
 | Parameter       | Required | Description                                  |
 |-----------------|----------|----------------------------------------------|
 | `--type`        | Yes      | `credit` (income) or `debit` (expense)       |
-| `--amount`      | Yes      | Positive number, up to 2 decimal places      |
+| `--amount`      | Yes      | Positive number up to 10,000,000, up to 2 decimal places |
 | `--date`        | Yes      | Date in `yyyy-MM-dd` format                  |
 | `--category`    | No       | Free-text label (e.g., `food`, `transport`)  |
 | `--description` | No       | Short description; use quotes for spaces     |
@@ -593,7 +596,8 @@ Examples: `2026-03-15`, `2026-01-01`
 
 ### Amounts
 
-- Must be a positive number.
+- Must be a positive number (greater than 0).
+- Must not exceed 10,000,000.
 - Up to 2 decimal places (e.g., `15.50`, `3000`, `0.99`).
 - Do not include currency symbols (`$`) in the input.
 

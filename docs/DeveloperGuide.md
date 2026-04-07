@@ -490,6 +490,7 @@ sequenceDiagram
     AddCommand->>AddCommand: parseArguments(rawArgs)
     AddCommand->>AddCommand: validateRequiredFields(parsedArgs)
     AddCommand->>AddCommand: convertAmount("15.50")
+    note right of AddCommand: Rejects amount ≤ 0 or > 10,000,000
     AddCommand->>AddCommand: convertDate("2026-03-05")
     AddCommand->>AddCommand: new Transaction(type, cat, amt, date, desc)
 
@@ -518,6 +519,7 @@ sequenceDiagram
 
 **Design notes:**
 - `AddCommand` is self-contained: it parses, validates, converts, and creates the `Transaction` internally. This keeps `TransactionManager` clean.
+- `convertAmount()` enforces that the amount is positive and does not exceed 10,000,000.
 - Dual-store (ArrayList + HashMap) ensures O(1) lookup while preserving insertion order for display.
 - Budget notification is a side-effect of `addTransaction()` — commands do not need to be aware of the budget system.
 
@@ -1175,6 +1177,41 @@ The description field is last, so pipes within descriptions are preserved (the p
 **Why overwrite the entire file?** The transaction list is small enough that a full rewrite on every change is fast and avoids the complexity of incremental updates or journaling. This also guarantees the file is always in a consistent state.
 
 **Graceful degradation:** If the autosave file is missing or corrupted, RLAD starts with an empty transaction list. Malformed lines are skipped with a log warning rather than crashing.
+
+### 4.10 Help Command
+
+**Classes involved:** `HelpCommand`, `Ui`
+
+`HelpCommand` provides built-in usage instructions. When invoked with no arguments (`help`), it calls `Ui.printPossibleOptions()` to list all available commands. When invoked with a command name (e.g. `help add`), it calls the corresponding manual method in `Ui` (e.g. `Ui.printAddManual()`).
+
+Supported commands: `add`, `modify`, `delete`, `list`, `filter`, `search`, `sort`, `summarize`, `budget`, `export`, `import`, `clear`, `help`, `exit`. Unrecognised command names produce an error message.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant HC as HelpCommand
+    participant Ui
+
+    User->>HC: execute(tm, ui)
+    activate HC
+
+    alt rawArgs is empty
+        HC->>Ui: printPossibleOptions()
+        Ui-->>User: list of all commands
+    else rawArgs matches a command
+        HC->>Ui: print<Command>Manual()
+        Ui-->>User: detailed usage for that command
+    else rawArgs is unknown
+        HC->>Ui: showResult("Unknown command: ...")
+        Ui-->>User: error message
+    end
+
+    deactivate HC
+```
+
+**Design notes:**
+- All help text lives in `Ui`, keeping `HelpCommand` a thin dispatcher.
+- Adding help for a new command requires one new `Ui` method and one new `case` in `HelpCommand`.
 
 ---
 
