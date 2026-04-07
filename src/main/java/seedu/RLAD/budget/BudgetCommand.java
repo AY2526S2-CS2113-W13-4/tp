@@ -5,7 +5,9 @@ import seedu.RLAD.Ui;
 import seedu.RLAD.command.Command;
 import seedu.RLAD.exception.RLADException;
 
+import java.time.LocalDate;  // ADD THIS IMPORT
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +18,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Command to manage monthly budgets.
+ *
+ * <p>Format: budget set|view|edit|delete|yearly [parameters]
+ *
+ * @version 2.0
+ */
 public class BudgetCommand extends Command {
     private static final int PROGRESS_BAR_LENGTH = 20;
 
@@ -27,105 +36,121 @@ public class BudgetCommand extends Command {
         super(rawArgs);
     }
 
+    /**
+     * Required by Command abstract class - calls the version with BudgetManager.
+     */
     @Override
     public void execute(TransactionManager transactions, Ui ui) throws RLADException {
-        // This method is required by the abstract Command class
-        // We need a BudgetManager to work, so throw an error
-        throw new RLADException("BudgetCommand requires a BudgetManager. Please use the version with BudgetManager.");
+        throw new RLADException("BudgetCommand requires BudgetManager. Internal error - this shouldn't happen.");
     }
 
-    // New method that accepts BudgetManager
+    /**
+     * Executes budget command with BudgetManager access.
+     */
     public void execute(TransactionManager transactions, Ui ui, BudgetManager budgetManager) throws RLADException {
-        Map<String, String> parsedArgs = parseArguments(rawArgs);
-
-        String subCommandStr = parsedArgs.getOrDefault("subcommand", "").toUpperCase();
-        SubCommand subCommand;
-
-        try {
-            subCommand = SubCommand.valueOf(subCommandStr);
-        } catch (IllegalArgumentException e) {
-            throw new RLADException("Invalid budget subcommand. Use: set, view, edit, or delete");
+        if (!hasValidArgs()) {
+            printUsage(ui);
+            return;
         }
 
+        String[] parts = rawArgs.trim().split("\\s+");
+        String subCommand = parts[0].toLowerCase();
+
         switch (subCommand) {
-        case SET:
-            handleSet(budgetManager, parsedArgs, ui);
+        case "set":
+            handleSet(parts, budgetManager, ui);
             break;
-        case VIEW:
-            handleView(budgetManager, parsedArgs, ui);
+
+        case "view":
+            handleView(parts, budgetManager, ui);
             break;
-        case EDIT:
-            handleEdit(budgetManager, parsedArgs, ui);
+
+        case "edit":
+            handleEdit(parts, budgetManager, ui);
             break;
-        case DELETE:
-            handleDelete(budgetManager, parsedArgs, ui);
+
+        case "delete":
+            handleDelete(parts, budgetManager, ui);
             break;
-        case YEARLY:
-            handleYearly(budgetManager, parsedArgs, ui);
+
+        case "yearly":
+            handleYearly(parts, budgetManager, ui);
             break;
 
         default:
-            throw new RLADException("Unknown budget subcommand: " + subCommandStr);
+            throw new RLADException("Unknown budget command: " + subCommand +
+                    ". Use: set, view, edit, delete, yearly");
         }
     }
 
-    private void handleSet(BudgetManager budgetManager, Map<String, String> args, Ui ui)
-            throws RLADException {
-        validateRequiredFields(args, "--month", "--category", "--amount");
+    private void handleSet(String[] parts, BudgetManager budgetManager, Ui ui) throws RLADException {
+        if (parts.length < 4) {
+            throw new RLADException("Usage: budget set <YYYY-MM> <category_code> <amount>");
+        }
 
-        YearMonth month = parseMonth(args.get("--month"));
-        int categoryCode = parseCategoryCode(args.get("--category"));
-        double amount = parseAmount(args.get("--amount"));
+        YearMonth month = parseMonth(parts[1]);
+        int categoryCode = parseCategoryCode(parts[2]);
+        double amount = parseAmount(parts[3]);
 
         budgetManager.setBudget(month, categoryCode, amount);
-
-        ui.showResult(String.format(
-                "✅ Budget set successfully for %s\n   Category [%d]: $%.2f",
-                month, categoryCode, amount
-        ));
+        ui.showResult(String.format("✅ Budget set: %s - Category %d: $%.2f", month, categoryCode, amount));
     }
 
-    private void handleView(BudgetManager budgetManager, Map<String, String> args, Ui ui)
-            throws RLADException {
-        if (args.containsKey("--month")) {
-            // View specific month
-            YearMonth month = parseMonth(args.get("--month"));
+    private void handleView(String[] parts, BudgetManager budgetManager, Ui ui) throws RLADException {
+        if (parts.length >= 2) {
+            YearMonth month = parseMonth(parts[1]);
             displayMonthlyBudget(budgetManager, month, ui);
         } else {
-            // View all months
             displayAllBudgets(budgetManager, ui);
         }
     }
 
-    private void handleEdit(BudgetManager budgetManager, Map<String, String> args, Ui ui)
-            throws RLADException {
-        validateRequiredFields(args, "--month", "--category", "--amount");
+    private void handleEdit(String[] parts, BudgetManager budgetManager, Ui ui) throws RLADException {
+        if (parts.length < 4) {
+            throw new RLADException("Usage: budget edit <YYYY-MM> <category_code> <amount>");
+        }
 
-        YearMonth month = parseMonth(args.get("--month"));
-        int categoryCode = parseCategoryCode(args.get("--category"));
-        double amount = parseAmount(args.get("--amount"));
+        YearMonth month = parseMonth(parts[1]);
+        int categoryCode = parseCategoryCode(parts[2]);
+        double amount = parseAmount(parts[3]);
 
         budgetManager.editBudget(month, categoryCode, amount);
-
-        ui.showResult(String.format(
-                "✅ Budget updated for %s\n   Category [%d]: $%.2f",
-                month, categoryCode, amount
-        ));
+        ui.showResult(String.format("✅ Budget updated: %s - Category %d: $%.2f", month, categoryCode, amount));
     }
 
-    private void handleDelete(BudgetManager budgetManager, Map<String, String> args, Ui ui)
-            throws RLADException {
-        validateRequiredFields(args, "--month", "--category");
+    private void handleDelete(String[] parts, BudgetManager budgetManager, Ui ui) throws RLADException {
+        if (parts.length < 3) {
+            throw new RLADException("Usage: budget delete <YYYY-MM> <category_code>");
+        }
 
-        YearMonth month = parseMonth(args.get("--month"));
-        int categoryCode = parseCategoryCode(args.get("--category"));
+        YearMonth month = parseMonth(parts[1]);
+        int categoryCode = parseCategoryCode(parts[2]);
 
         budgetManager.deleteBudget(month, categoryCode);
+        ui.showResult(String.format("✅ Budget deleted: %s - Category %d", month, categoryCode));
+    }
 
-        ui.showResult(String.format(
-                "✅ Budget deleted for %s\n   Category [%d]",
-                month, categoryCode
-        ));
+    private void handleYearly(String[] parts, BudgetManager budgetManager, Ui ui) throws RLADException {
+        int year;
+        if (parts.length >= 2) {
+            year = parseYear(parts[1]);
+        } else {
+            year = LocalDate.now().getYear();  // FIXED: Added LocalDate import
+        }
+        String summary = budgetManager.getYearlySummary(year);
+        ui.showResult(summary);
+    }
+
+    private int parseYear(String yearStr) throws RLADException {
+        try {
+            int year = Integer.parseInt(yearStr.trim());
+            if (year < 2000 || year > 2100) {
+                throw new RLADException("Year must be between 2000 and 2100");
+            }
+            return year;
+        } catch (NumberFormatException e) {
+            throw new RLADException("Invalid year format. Use YYYY (e.g., 2026)");
+        }
     }
 
     private void displayMonthlyBudget(BudgetManager budgetManager, YearMonth month, Ui ui) {
@@ -274,9 +299,9 @@ public class BudgetCommand extends Command {
 
     private YearMonth parseMonth(String monthStr) throws RLADException {
         try {
-            return YearMonth.parse(monthStr);
+            return YearMonth.parse(monthStr, DateTimeFormatter.ofPattern("yyyy-MM"));
         } catch (DateTimeParseException e) {
-            throw new RLADException("Invalid month format. Please use YYYY-MM (e.g., 2026-03)");
+            throw new RLADException("Invalid month format. Use YYYY-MM (e.g., 2026-03)");
         }
     }
 
@@ -298,79 +323,30 @@ public class BudgetCommand extends Command {
             if (amount <= 0) {
                 throw new RLADException("Amount must be greater than 0");
             }
+            if (amount > 10000000) {
+                throw new RLADException("Amount must not exceed 10,000,000");
+            }
             return Math.round(amount * 100.0) / 100.0;
         } catch (NumberFormatException e) {
-            throw new RLADException("Invalid amount format. Please enter a valid number (e.g., 500.00)");
+            throw new RLADException("Invalid amount format. Please enter a number (e.g., 500.00)");
         }
     }
 
-    private void validateRequiredFields(Map<String, String> args, String... requiredFields)
-            throws RLADException {
-        for (String field : requiredFields) {
-            if (!args.containsKey(field) || args.get(field).trim().isEmpty()) {
-                throw new RLADException("Missing required field: " + field);
-            }
-        }
-    }
-
-    private Map<String, String> parseArguments(String rawArgs) {
-        Map<String, String> argsMap = new HashMap<>();
-
-        if (rawArgs == null || rawArgs.trim().isEmpty()) {
-            return argsMap;
-        }
-
-        // Extract subcommand (first word)
-        String[] parts = rawArgs.trim().split("\\s+", 2);
-        argsMap.put("subcommand", parts[0].toLowerCase());
-
-        if (parts.length < 2) {
-            return argsMap;
-        }
-
-        // Parse remaining flags
-        String remaining = parts[1];
-        String[] tokens = remaining.split("\\s+(?=--|$)");
-
-        for (String token : tokens) {
-            if (token.startsWith("--")) {
-                String[] keyValue = token.split("\\s+", 2);
-                String key = keyValue[0];
-                String value = keyValue.length > 1 ? keyValue[1] : "";
-                argsMap.put(key, value);
-            }
-        }
-
-        return argsMap;
-    }
-
-    private void handleYearly(BudgetManager budgetManager, Map<String, String> args, Ui ui)
-            throws RLADException {
-        int year;
-        if (args.containsKey("--year")) {
-            year = parseYear(args.get("--year"));
-        } else {
-            year = java.time.LocalDate.now().getYear();
-        }
-        String summary = budgetManager.getYearlySummary(year);
-        ui.showResult(summary);
-    }
-
-    private int parseYear(String yearStr) throws RLADException {
-        try {
-            int year = Integer.parseInt(yearStr.trim());
-            if (year < 2000 || year > 2100) {
-                throw new RLADException("Year must be between 2000 and 2100");
-            }
-            return year;
-        } catch (NumberFormatException e) {
-            throw new RLADException("Invalid year format. Use YYYY (e.g., 2026)");
-        }
+    private void printUsage(Ui ui) {
+        ui.showResult("\n📝 Budget Commands:\n" +
+                "  budget set <YYYY-MM> <category_code> <amount>     - Set a budget\n" +
+                "  budget view [YYYY-MM]                            - View budget(s)\n" +
+                "  budget edit <YYYY-MM> <category_code> <amount>   - Edit a budget\n" +
+                "  budget delete <YYYY-MM> <category_code>          - Delete a budget\n" +
+                "  budget yearly [YYYY]                             - Yearly summary\n" +
+                "\nCategory codes:\n" +
+                "  1=Food, 2=Transport, 3=Utilities, 4=Housing\n" +
+                "  5=Health, 6=Debt, 7=Childcare, 8=Shopping\n" +
+                "  9=Gifts, 10=Investments, 11=Emergency, 12=Savings");
     }
 
     @Override
     public boolean hasValidArgs() {
-
         return rawArgs != null && !rawArgs.trim().isEmpty();
     }
 }

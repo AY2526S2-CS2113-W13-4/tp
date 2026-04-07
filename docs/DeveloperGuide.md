@@ -465,9 +465,36 @@ classDiagram
 
 ## 4. Implementation
 
-### 4.1 Add Transaction
+### 4.1 Add Transaction (Position-Based Parsing)
 
 **Classes involved:** `AddCommand`, `TransactionManager`, `BudgetManager`, `Transaction`
+
+Instead of complex flag parsing with `--type`, RLAD now uses intuitive position-based arguments. The user simply types values in order, making the CLI feel natural and reducing the learning curve.
+
+**Parsing strategy:**
+1. Split input by spaces
+2. First token = type (credit/debit)
+3. Second token = amount (validated as positive number)
+4. Third token = date (validated as YYYY-MM-DD)
+5. Remaining tokens = category (single word) + description (may use quotes for spaces)
+
+**Example parsing flow:**
+```
+Input: "add credit 3000 2026-03-01 salary March salary"
+→ parts = ["add", "credit", "3000", "2026-03-01", "salary", "March", "salary"]
+→ type = "credit"
+→ amount = 3000.0
+→ date = 2026-03-01
+→ category = "salary"
+→ description = "March salary" (joined remaining words)
+```
+
+**Quote handling for descriptions:**
+```
+Input: 'add debit 15.50 2026-03-05 food "Chicken rice at hawker"'
+→ description = "Chicken rice at hawker" (preserves spaces)
+```
+
 
 **Sequence:**
 
@@ -480,7 +507,7 @@ sequenceDiagram
     participant BM as BudgetManager
     participant Ui
 
-    User->>Parser: add --type debit --amount 15.50 --date 2026-03-05
+    User->>Parser: add credit 3000 2026-03-01 salary "March salary"
     Parser->>AddCommand: new AddCommand(rawArgs)
     AddCommand->>AddCommand: hasValidArgs()
 
@@ -488,10 +515,11 @@ sequenceDiagram
 
     activate AddCommand
     AddCommand->>AddCommand: parseArguments(rawArgs)
-    AddCommand->>AddCommand: validateRequiredFields(parsedArgs)
-    AddCommand->>AddCommand: convertAmount("15.50")
-    note right of AddCommand: Rejects amount ≤ 0 or > 10,000,000
-    AddCommand->>AddCommand: convertDate("2026-03-05")
+    Note right of AddCommand: Position-based: type, amount, date, [category], [description]
+
+    AddCommand->>AddCommand: validateRequiredFields()
+    AddCommand->>AddCommand: convertAmount("3000")
+    AddCommand->>AddCommand: convertDate("2026-03-01")
     AddCommand->>AddCommand: new Transaction(type, cat, amt, date, desc)
 
     AddCommand->>TM: addTransaction(t)
@@ -518,6 +546,10 @@ sequenceDiagram
 ```
 
 **Design notes:**
+- Intuitive order: Users naturally think "I spent $15.50 on food on March 5th" → `add debit 15.50 2026-03-05 food`
+- Lower cognitive load: No need to remember flag names (`--type`, `--amount`, `--date`)
+- Faster typing: Position-based parsing is more efficient for frequent users
+- Consistent pattern: All commands follow similar simple patterns
 - `AddCommand` is self-contained: it parses, validates, converts, and creates the `Transaction` internally. This keeps `TransactionManager` clean.
 - `convertAmount()` enforces that the amount is positive and does not exceed 10,000,000.
 - Dual-store (ArrayList + HashMap) ensures O(1) lookup while preserving insertion order for display.

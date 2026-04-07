@@ -1,76 +1,51 @@
+// SortCommand.java - Simplified
 package seedu.RLAD.command;
 
 import seedu.RLAD.TransactionManager;
 import seedu.RLAD.TransactionSorter;
 import seedu.RLAD.Ui;
 import seedu.RLAD.exception.RLADException;
-import java.util.logging.Logger;
 
-/**
- * Sets the global sort order for transaction display.
- * Usage:
- *   sort              -> Shows current sort setting
- *   sort amount       -> Sort by amount ascending
- *   sort date desc    -> Sort by date descending
- *   sort reset        -> Clear sort, back to insertion order
- */
 public class SortCommand extends Command {
-    private static final Logger logger = Logger.getLogger(SortCommand.class.getName());
-    private String field;
-    private String direction;
 
     public SortCommand(String rawArgs) {
         super(rawArgs);
-        parseArgs(rawArgs);
-    }
-
-    private void parseArgs(String rawArgs) {
-        if (rawArgs == null || rawArgs.trim().isEmpty()) {
-            this.field = "";
-            this.direction = "";
-            return;
-        }
-        String[] tokens = rawArgs.trim().split("\\s+");
-        this.field = tokens[0].toLowerCase();
-        if (tokens.length > 1) {
-            this.direction = tokens[1].toLowerCase();
-        } else {
-            this.direction = "asc";
-        }
     }
 
     @Override
     public void execute(TransactionManager transactions, Ui ui) throws RLADException {
-        assert transactions != null : "TransactionManager should not be null";
-        logger.info("Executing SortCommand with field: " + field + ", direction: " + direction);
-        if (field.isEmpty()) {
+        if (rawArgs == null || rawArgs.trim().isEmpty()) {
+            // Show current sort
             String currentField = transactions.getGlobalSortField();
             if (currentField.isEmpty()) {
-                ui.showResult("No sort order set. Transactions are shown in insertion order.");
+                ui.showResult("No sort order set. Use 'sort amount' or 'sort date'");
             } else {
-                ui.showResult("Current sort: " + currentField + " ("
-                        + transactions.getGlobalSortDirection() + ")");
+                ui.showResult("Current sort: " + currentField + " " + transactions.getGlobalSortDirection());
             }
             return;
         }
 
+        String[] parts = rawArgs.trim().split("\\s+");
+        String field = parts[0].toLowerCase();
+
         if (field.equals("reset")) {
             transactions.clearGlobalSort();
-            ui.showResult("Sort order cleared. Transactions will be shown in insertion order.");
+            ui.showResult("Sort order cleared");
             return;
         }
 
+        String direction = parts.length > 1 ? parts[1].toLowerCase() : "asc";
+
         if (!TransactionSorter.isValidSortField(field)) {
-            throw new RLADException("Unknown sort field: '" + field
-                    + "'. Use 'amount' or 'date'. Example: sort amount desc");
+            throw new RLADException("Sort by 'amount' or 'date' only");
         }
+
         if (!TransactionSorter.isValidDirection(direction)) {
-            throw new RLADException("Unknown sort direction: '" + direction
-                    + "'. Use 'asc' or 'desc'. Example: sort date desc");
+            throw new RLADException("Direction must be 'asc' or 'desc'");
         }
 
         transactions.setGlobalSort(field, direction);
-        ui.showResult("Sort order set: " + field + " (" + direction + ")");
+        ui.showResult(String.format("Sorting by %s (%s)", field, direction));
     }
 
     @Override
