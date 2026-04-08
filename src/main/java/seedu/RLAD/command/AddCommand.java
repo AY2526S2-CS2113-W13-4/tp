@@ -5,223 +5,277 @@ import seedu.RLAD.Transaction;
 import seedu.RLAD.Ui;
 import seedu.RLAD.exception.RLADException;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * Command to add a new transaction to the ledger.
+ *
+ * <p>This command uses position-based arguments for intuitive typing:
+ * <pre>
+ * add credit 3000 2026-03-01 salary "March salary"
+ * add debit 15.50 2026-03-05 food "Chicken rice"
+ * </pre>
+ *
+ * <p>The argument order is: type, amount, date, [category], [description]
+ *
+ * @version 2.0
+ */
 public class AddCommand extends Command {
+
+    /** Formatter for strict date parsing in YYYY-MM-DD format */
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    /** Maximum allowed transaction amount to prevent overflow */
+    private static final double MAX_AMOUNT = 10_000_000.00;
+
+    /**
+     * Constructs an AddCommand with raw user input.
+     *
+     * @param rawArgs The raw argument string (everything after "add")
+     */
     public AddCommand(String rawArgs) {
         super(rawArgs);
     }
 
     /**
-     * Parses the raw argument string to extract flag-value pairs.
-     * Handles quoted values (like descriptions with spaces).
+     * Executes the add command by parsing arguments and creating a transaction.
      *
-     * @param rawArgs The raw input string (e.g., "--type debit --amount 15.50 --date 2026-02-18")
-     * @return A Map with flag names as keys and their values as strings
+     * <p>The parsing strategy:
+     * <ol>
+     *   <li>Split input by spaces</li>
+     *   <li>Token 0 = type (credit/debit)</li>
+     *   <li>Token 1 = amount (positive number)</li>
+     *   <li>Token 2 = date (YYYY-MM-DD)</li>
+     *   <li>Remaining tokens = category (optional) + description (optional, may use quotes)</li>
+     * </ol>
+     *
+     * @param transactions The transaction manager to add to
+     * @param ui The UI component for displaying results
+     * @throws RLADException If arguments are invalid or missing
      */
-    public static Map<String, String> parseArguments(String rawArgs) {
-        Map<String, String> argsMap = new HashMap<>();
-
-        // Check if the string is empty, if it's empty then the empty map is returned, nothing to parse
-        if (rawArgs == null || rawArgs.trim().isEmpty()) {
-            return argsMap;
+    @Override
+    public void execute(TransactionManager transactions, Ui ui) throws RLADException {
+        // Validate input exists
+        if (!hasValidArgs()) {
+            throw new RLADException(getUsageHelp());
         }
 
-        //Variables to track our position while reading
-        StringBuilder currentFlag = null;   //To build the flag name char by char (like "--type")
-        StringBuilder currentValue = new StringBuilder();   //Builds the value char by char
-        boolean insideQuotes = false;   //A flag to check if we're inside the quotes (To handle description with spaces)
+        // Parse position-based arguments
+        String[] parts = rawArgs.trim().split("\\s+");
 
-        //Loop through each character of the rawArgs
-        for (int i = 0; i < rawArgs.length(); i++) {
-            char c = rawArgs.charAt(i); //Stores the first char in c
-
-            //Handle quotes, checks when you reached the description part
-            if (c == '"') {
-                insideQuotes = !insideQuotes;
-                continue;   //Moves on to the next char of description
-            }
-
-            //If we hit a space and we're not inside quotes, it's the input of a non-description flag
-            if (c == ' ' && !insideQuotes) {
-                //If we have a complete flag and value , store it
-                if (currentFlag != null && currentValue.length() > 0) {
-                    //Add or updates the flag-string pair into the HashMap. Updates if the key is already present
-                    argsMap.put(currentFlag.toString(), currentValue.toString().trim());
-                    currentFlag = null; //Reset flag
-                    currentValue.setLength(0);  //Clear value
-                }
-                continue;
-            }
-
-            //Check for the start of the flag (--something)
-            if (c == '-' && i + 1 < rawArgs.length() && rawArgs.charAt(i + 1) == '-') {
-                //Stores the flag, value pair into the HashMap once it's fully found
-                if (currentFlag != null && currentValue.length() > 0) {
-                    argsMap.put(currentFlag.toString(), currentValue.toString().trim());
-                    currentValue.setLength(0);
-                }
-
-                //Extract the flag name (--type etc.)
-                int flagStart = i;
-                //Finding the flag name
-                while (i < rawArgs.length() && rawArgs.charAt(i) != ' ') {
-                    i++;
-                }
-                //Flag found, finds the flag substring in the rawArgs and concatenates to currentFlag
-                currentFlag = new StringBuilder(rawArgs.substring(flagStart, i));
-                i--; //Adjust for loop increment
-                continue;
-            }
-
-            /*
-            The flag is found, the code can now go to the input string after the flag,
-            so add character/string to currentValue.
-            You'll then get a matching <flag, string> pair
-             */
-            if (currentFlag != null) {
-                currentValue.append(c); //Appends the input string into currentValue
-            }
+        // Validate minimum required fields (type, amount, date)
+        if (parts.length < 3) {
+            throw new RLADException(getUsageHelp());
         }
 
-        /*
-        Save the last flag-string pair
-        The last flag-string pair is found but not stored yet in
-        the previous for-loop since it only saves when it reaches a space
-        So need this code to assign the last pair
-         */
-        if (currentFlag != null && currentValue.length() > 0) {
-            argsMap.put(currentFlag.toString(), currentValue.toString().trim());
-        }
-        return argsMap;
+        // ========== Parse required fields (positions 0, 1, 2) ==========
+        String type = parseAndValidateType(parts[0]);
+        double amount = parseAndValidateAmount(parts[1]);
+        LocalDate date = parseAndValidateDate(parts[2]);
+
+        // ========== Parse optional fields (positions 3+) ==========
+        ParsedOptionalFields optionalFields = parseOptionalFields(parts);
+        String category = optionalFields.category;
+        String description = optionalFields.description;
+
+        // Create and add the transaction
+        Transaction newTransaction = new Transaction(type, category, amount, date, description);
+        transactions.addTransaction(newTransaction);
+
+        // Display success message to user
+        displaySuccessMessage(ui, newTransaction, category, description);
     }
 
     /**
-     * Validates that all required fields are present and non-empty.
-     * Also validates that type is either "debit" or "credit".
+     * Validates and parses the transaction type.
      *
-     * @param parsedArgs The map of parsed arguments
-     * @throws RLADException if any required field is missing or invalid
+     * @param typeStr The type string from user input
+     * @return Validated type ("credit" or "debit")
+     * @throws RLADException If type is not "credit" or "debit"
      */
-    private void validateRequiredFields(Map<String, String> parsedArgs) throws RLADException {
-        // Only validates the necessary fields except category and description
-        String[] requiredFields = {"--type", "--amount", "--date"};
-
-        for (String field : requiredFields) {
-            //Checks if the flag field is empty
-            if (!parsedArgs.containsKey(field) || parsedArgs.get(field).trim().isEmpty()) {
-                //Show error messages
-                throw new RLADException("Missing required field: " + field);
-            }
+    private String parseAndValidateType(String typeStr) throws RLADException {
+        String type = typeStr.toLowerCase();
+        if (!type.equals("credit") && !type.equals("debit")) {
+            throw new RLADException("Invalid type: '" + typeStr + "'. Use 'credit' or 'debit'.");
         }
-
-        //Validate that --type is either "debit" or "credit"
-        String type = parsedArgs.get("--type");
-        if (!type.equals("debit") && !type.equals("credit")) {
-            throw new RLADException("Invalid --type. Must be either 'debit' or 'credit'");
-        }
+        return type;
     }
 
     /**
-     * Converts a string amount to a double.
-     * Validates that amount is positive and rounds to 2 decimal places.
+     * Validates and parses the transaction amount.
      *
-     * @param amountStr The amount as a string
-     * @return The amount as a double
-     * @throws RLADException if the amount format is invalid
+     * @param amountStr The amount string from user input
+     * @return Validated amount as double
+     * @throws RLADException If amount is not a positive number or exceeds limits
      */
-    private double convertAmount(String amountStr) throws RLADException {
+    private double parseAndValidateAmount(String amountStr) throws RLADException {
         double amount;
         try {
             amount = Double.parseDouble(amountStr);
         } catch (NumberFormatException e) {
-            throw new RLADException("Invalid amount format. Please enter a valid number (e.g., 15.50)");
+            throw new RLADException("Invalid amount: '" + amountStr + "'. Please enter a number (e.g., 15.50)");
         }
+
         if (amount <= 0) {
-            throw new RLADException("Amount must be greater than 0.");
+            throw new RLADException("Amount must be greater than 0. Got: " + amount);
         }
-        if (amount > 10000000) {
-            throw new RLADException("Amount must not exceed 10,000,000.");
+
+        if (amount > MAX_AMOUNT) {
+            throw new RLADException(String.format("Amount cannot exceed $%,.2f. Got: $%,.2f", MAX_AMOUNT, amount));
         }
-        return amount;
+
+        // Round to 2 decimal places for consistency
+        return Math.round(amount * 100.0) / 100.0;
     }
 
     /**
-     * Converts a string date to a LocalDate object.
-     * Expected format: yyyy-MM-dd
+     * Validates and parses the transaction date.
      *
-     * @param dateStr The date as a string
-     * @return The date as a LocalDate
-     * @throws RLADException if the date format is invalid
+     * @param dateStr The date string from user input
+     * @return Validated date as LocalDate
+     * @throws RLADException If date format is invalid
      */
-    private LocalDate convertDate(String dateStr) throws RLADException {
+    private LocalDate parseAndValidateDate(String dateStr) throws RLADException {
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            return LocalDate.parse(dateStr, formatter);
+            return LocalDate.parse(dateStr, DATE_FORMATTER);
         } catch (DateTimeParseException e) {
-            throw new RLADException("Invalid date format. Please use yyyy-MM-dd (e.g., 2026-02-18)");
+            throw new RLADException("Invalid date: '" + dateStr + "'. Use YYYY-MM-DD (e.g., 2026-03-01)");
         }
     }
 
-    @Override
-    public void execute(TransactionManager transactions, Ui ui) {
-        // TODO: Use a tokenizer or regex to extract --type, --amount, --category, --date, and --description.
-        // Step 1: Parse
-        Map<String, String> parsedArgs = parseArguments(rawArgs);
+    /**
+     * Parses optional fields (category and description) from remaining arguments.
+     *
+     * <p>Handles quoted descriptions that may contain spaces.
+     *
+     * @param parts All argument parts from split input
+     * @return ParsedOptionalFields containing category and description (may be null)
+     */
+    private ParsedOptionalFields parseOptionalFields(String[] parts) {
+        if (parts.length < 4) {
+            return new ParsedOptionalFields(null, null);
+        }
 
-        // TODO: Validate that mandatory fields (--type, --amount, --date) are present.
-        // Step 2: Validate required fields
-        validateRequiredFields(parsedArgs);
+        List<String> remainingParts = new ArrayList<>();
+        boolean inQuotes = false;
+        StringBuilder quotedDesc = new StringBuilder();
+        String description = null;
 
-        // TODO: Convert the amount string to double and date string to LocalDate.
-        // Step 3: Convert data types
-        double amount = convertAmount(parsedArgs.get("--amount"));
-        LocalDate date = convertDate(parsedArgs.get("--date"));
+        // Process remaining arguments (from index 3 onward)
+        for (int i = 3; i < parts.length; i++) {
+            String part = parts[i];
 
-        // Step 4: Get all fields (optional fields may be null)
-        String type = parsedArgs.get("--type");
-        String category = parsedArgs.get("--category");  // May be null
-        String description = parsedArgs.get("--description");  // May be null
+            // Handle quoted description start
+            if (part.startsWith("\"") && !inQuotes) {
+                inQuotes = true;
+                quotedDesc.append(part.substring(1));
 
-        // TODO: Create a new Transaction object and add it via transactions.addTransaction().
-        // Step 5: Create Transaction object
-        // Note: category and description can be null
-        Transaction newTransaction = new Transaction(type, category, amount, date, description);
+                // Handle case where quote ends in same token
+                if (part.endsWith("\"")) {
+                    description = quotedDesc.toString();
+                    description = description.substring(0, description.length() - 1);
+                    inQuotes = false;
+                    quotedDesc.setLength(0);
+                }
+            }
+            // Continue building quoted description
+            else if (inQuotes) {
+                quotedDesc.append(" ").append(part);
+                if (part.endsWith("\"")) {
+                    description = quotedDesc.toString();
+                    description = description.substring(0, description.length() - 1);
+                    inQuotes = false;
+                    quotedDesc.setLength(0);
+                }
+            }
+            // Normal word (not in quotes)
+            else {
+                remainingParts.add(part);
+            }
+        }
 
-        // Step 6: Add to TransactionManager
-        transactions.addTransaction(newTransaction);
+        // First remaining part is category (if exists)
+        String category = remainingParts.isEmpty() ? null : remainingParts.get(0);
 
-        // TODO: Provide success feedback to the user via ui.showResult().
-        // Step 7: Show success message with the hashId
+        // If we have more parts and no quoted description, join them as description
+        if (description == null && remainingParts.size() > 1) {
+            description = String.join(" ", remainingParts.subList(1, remainingParts.size()));
+        }
 
-        // This ensures that "   " or "" are treated as (none)
+        return new ParsedOptionalFields(category, description);
+    }
+
+    /**
+     * Displays a formatted success message to the user.
+     *
+     * @param ui The UI component
+     * @param transaction The newly created transaction
+     * @param category The category (may be null)
+     * @param description The description (may be null)
+     */
+    private void displaySuccessMessage(Ui ui, Transaction transaction, String category, String description) {
         String categoryDisplay = (category == null || category.trim().isEmpty()) ? "(none)" : category;
-        String descriptionDisplay = (description == null || description.trim().isEmpty()) ?
-                "(none)" : "\"" + description + "\"";
+        String descriptionDisplay = (description == null || description.trim().isEmpty())
+                ? "(none)" : "\"" + description + "\"";
 
         String successMessage = String.format(
-                "✅ Transaction added successfully!\n   HashID: %s\n   " +
-                    "%s: $%.2f on %s\n   Category: %s\n   Description: %s",
-                newTransaction.getHashId(),
-                type.toUpperCase(),
-                amount,
-                date,
+                "✅ Transaction added successfully!\n" +
+                        "   ID: %s\n" +
+                        "   %s: $%.2f on %s\n" +
+                        "   Category: %s\n" +
+                        "   Description: %s",
+                transaction.getHashId(),
+                transaction.getType().toUpperCase(),
+                transaction.getAmount(),
+                transaction.getDate(),
                 categoryDisplay,
                 descriptionDisplay
         );
         ui.showResult(successMessage);
     }
 
+    /**
+     * Generates usage help text for this command.
+     *
+     * @return Formatted usage instructions
+     */
+    private String getUsageHelp() {
+        return "Usage: add <type> <amount> <date> [category] [description]\n" +
+                "  type: credit or debit\n" +
+                "  amount: positive number (max $10,000,000)\n" +
+                "  date: YYYY-MM-DD\n" +
+                "  category: optional single word\n" +
+                "  description: optional (use quotes for spaces)\n\n" +
+                "Examples:\n" +
+                "  add credit 3000 2026-03-01 salary \"March salary\"\n" +
+                "  add debit 15.50 2026-03-05 food \"Chicken rice\"\n" +
+                "  add debit 5.00 2026-03-06";
+    }
+
+    /**
+     * Validates that the command has sufficient arguments to execute.
+     *
+     * @return true if rawArgs is not null or empty
+     */
     @Override
     public boolean hasValidArgs() {
-        // TODO: Check if rawArgs contains the required flags to prevent runtime RLADExceptions.
-        return rawArgs != null &&
-                rawArgs.contains("--type") &&
-                rawArgs.contains("--amount") &&
-                rawArgs.contains("--date");
+        return rawArgs != null && !rawArgs.trim().isEmpty();
+    }
+
+    /**
+     * Container for parsed optional fields.
+     */
+    private static class ParsedOptionalFields {
+        final String category;
+        final String description;
+
+        ParsedOptionalFields(String category, String description) {
+            this.category = category;
+            this.description = description;
+        }
     }
 }
