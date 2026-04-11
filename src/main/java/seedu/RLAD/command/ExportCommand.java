@@ -41,7 +41,7 @@ public class ExportCommand extends Command {
         }
 
         CsvStorageManager.exportToCsv(txns, filename);
-        ui.showResult("Exported " + txns.size() + " transactions to: " + filename);
+        ui.showResult("Exported " + txns.size() + " transactions to: ./" + filename);
     }
 
     @Override
