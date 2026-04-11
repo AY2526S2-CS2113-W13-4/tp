@@ -103,7 +103,7 @@ class ExportCommandTest {
     }
 
     @Test
-    void execute_missingParentDirectory_userConfirms_createsDirectoryAndFile() throws Exception {
+    void execute_missingDirUserConfirms_createsDirectoryAndFile() throws Exception {
         tm.addTransaction(new Transaction("debit", "food", 10.00,
                 LocalDate.of(2026, 1, 1), "Test"));
 
@@ -119,7 +119,7 @@ class ExportCommandTest {
     }
 
     @Test
-    void execute_missingParentDirectory_userDeclines_cancelsExport() throws Exception {
+    void execute_missingDirUserDeclines_cancelsExport() throws Exception {
         tm.addTransaction(new Transaction("debit", "food", 10.00,
                 LocalDate.of(2026, 1, 1), "Test"));
 
