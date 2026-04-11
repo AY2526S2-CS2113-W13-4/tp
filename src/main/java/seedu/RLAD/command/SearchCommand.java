@@ -6,7 +6,6 @@ import seedu.RLAD.Ui;
 import seedu.RLAD.exception.RLADException;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SearchCommand extends Command {
@@ -18,9 +17,7 @@ public class SearchCommand extends Command {
     }
 
     private String parseKeyword() {
-        Map<String, String> flags = FilterCommand.parseFlags(rawArgs);
-        String keyword = flags.get("keyword");
-        return (keyword != null && !keyword.isEmpty()) ? keyword : null;
+        return (rawArgs != null && !rawArgs.trim().isEmpty()) ? rawArgs.trim() : null;
     }
 
     private boolean matchesKeyword(Transaction t, String keyword) {
@@ -77,6 +74,6 @@ public class SearchCommand extends Command {
 
     @Override
     public boolean hasValidArgs() {
-        return rawArgs != null && rawArgs.contains("--keyword") && parseKeyword() != null;
+        return rawArgs != null && !rawArgs.trim().isEmpty();
     }
 }
