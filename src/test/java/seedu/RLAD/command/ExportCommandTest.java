@@ -40,29 +40,29 @@ class ExportCommandTest {
         tm.addTransaction(new Transaction("debit", "transport", 3.50,
                 LocalDate.of(2026, 3, 16), "Bus"));
 
-        String file = tempDir.resolve("out.csv").toString();
-        ExportCommand cmd = new ExportCommand("--file out.csv --path " + tempDir);
+        Path target = tempDir.resolve("out.csv");
+        ExportCommand cmd = new ExportCommand(target.toString());
         cmd.execute(tm, ui);
 
-        Path filePath = tempDir.resolve("out.csv");
-        assertTrue(Files.exists(filePath));
-        List<String> lines = Files.readAllLines(filePath);
+        assertTrue(Files.exists(target));
+        List<String> lines = Files.readAllLines(target);
         assertEquals(3, lines.size());
         assertEquals("HashID,Type,Category,Amount,Date,Description", lines.get(0));
     }
 
     @Test
     void execute_emptyTransactions_noFileCreated() throws RLADException {
-        ExportCommand cmd = new ExportCommand("--file out.csv --path " + tempDir);
+        Path target = tempDir.resolve("out.csv");
+        ExportCommand cmd = new ExportCommand(target.toString());
         cmd.execute(tm, ui);
-        assertTrue(!Files.exists(tempDir.resolve("out.csv")));
+        assertTrue(!Files.exists(target));
     }
 
     @Test
     void execute_invalidPath_throwsException() {
         tm.addTransaction(new Transaction("credit", "food", 50.00,
                 LocalDate.of(2026, 3, 15), "Test"));
-        ExportCommand cmd = new ExportCommand("--path /nonexistent/dir/xyz");
+        ExportCommand cmd = new ExportCommand("/nonexistent/dir/xyz/out.csv");
         assertThrows(RLADException.class, () -> cmd.execute(tm, ui));
     }
 
@@ -71,10 +71,11 @@ class ExportCommandTest {
         tm.addTransaction(new Transaction("credit", "food", 25.00,
                 LocalDate.of(2026, 1, 1), "Meal, \"fancy\" place"));
 
-        ExportCommand cmd = new ExportCommand("--file special.csv --path " + tempDir);
+        Path target = tempDir.resolve("special.csv");
+        ExportCommand cmd = new ExportCommand(target.toString());
         cmd.execute(tm, ui);
 
-        List<String> lines = Files.readAllLines(tempDir.resolve("special.csv"));
+        List<String> lines = Files.readAllLines(target);
         assertEquals(2, lines.size());
         assertTrue(lines.get(1).contains("\"Meal, \"\"fancy\"\" place\""));
     }
@@ -82,22 +83,18 @@ class ExportCommandTest {
     @Test
     void hasValidArgs_always_returnsTrue() {
         assertEquals(true, new ExportCommand("").hasValidArgs());
-        assertEquals(true, new ExportCommand("--file test.csv").hasValidArgs());
+        assertEquals(true, new ExportCommand("test.csv").hasValidArgs());
     }
 
     @Test
-    void execute_emptyFileFlag_throwsException() {
+    void execute_absoluteFilename_createsFileAtPath() throws Exception {
         tm.addTransaction(new Transaction("credit", "food", 50.00,
                 LocalDate.of(2026, 3, 15), "Test"));
-        ExportCommand cmd = new ExportCommand("--file");
-        assertThrows(RLADException.class, () -> cmd.execute(tm, ui));
-    }
 
-    @Test
-    void execute_emptyPathFlag_throwsException() {
-        tm.addTransaction(new Transaction("credit", "food", 50.00,
-                LocalDate.of(2026, 3, 15), "Test"));
-        ExportCommand cmd = new ExportCommand("--file out.csv --path");
-        assertThrows(RLADException.class, () -> cmd.execute(tm, ui));
+        Path target = tempDir.resolve("absolute.csv").toAbsolutePath();
+        ExportCommand cmd = new ExportCommand(target.toString());
+        cmd.execute(tm, ui);
+
+        assertTrue(Files.exists(target));
     }
 }

@@ -12,7 +12,6 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * Exports all transactions to a CSV file.
@@ -30,24 +29,14 @@ public class ExportCommand extends Command {
 
     @Override
     public void execute(TransactionManager transactions, Ui ui) throws RLADException {
-        Map<String, String> flags = FilterCommand.parseFlags(rawArgs);
+        String filename = parseFilename(rawArgs);
 
-        String filename = stripQuotes(flags.getOrDefault("file",
-                "transactions_" + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".csv"));
-        if (filename.isBlank()) {
-            throw new RLADException("--file requires a filename. "
-                    + "Example: export --file transactions.csv");
-        }
-
-        String directory = stripQuotes(flags.getOrDefault("path", "."));
-        if (directory.isBlank()) {
-            throw new RLADException("--path requires a directory. "
-                    + "Example: export --path ./data");
-        }
-
-        Path dirPath = Paths.get(directory);
-        if (!Files.isDirectory(dirPath)) {
-            throw new RLADException("Directory does not exist: " + directory);
+        Path filePath = Paths.get(filename);
+        Path dirPath = filePath.getParent();
+        if (dirPath == null) {
+            dirPath = Paths.get(".");
+        } else if (!Files.isDirectory(dirPath)) {
+            throw new RLADException("Directory does not exist: " + dirPath);
         }
 
         ArrayList<Transaction> txns = transactions.getTransactions();
@@ -56,10 +45,21 @@ public class ExportCommand extends Command {
             return;
         }
 
-        String fullPath = dirPath.resolve(filename).toString();
+        String fullPath = filePath.isAbsolute()
+                ? filePath.toString()
+                : dirPath.resolve(filePath.getFileName()).toString();
         CsvStorageManager.exportToCsv(txns, fullPath);
 
         ui.showResult("Exported " + txns.size() + " transactions to: " + fullPath);
+    }
+
+    private static String parseFilename(String rawArgs) {
+        String defaultName = "transactions_"
+                + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".csv";
+        if (rawArgs == null || rawArgs.isBlank()) {
+            return defaultName;
+        }
+        return stripQuotes(rawArgs.trim());
     }
 
     private static String stripQuotes(String value) {
