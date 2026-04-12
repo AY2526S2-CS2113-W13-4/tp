@@ -34,6 +34,10 @@ public class SortCommand extends Command {
             return;
         }
 
+        if (parts.length > 2) {
+            throw new RLADException("Too many arguments. Usage: sort [amount|date] [asc|desc]");
+        }
+
         String direction = parts.length > 1 ? parts[1].toLowerCase() : "asc";
 
         if (!TransactionSorter.isValidSortField(field)) {
