@@ -9,7 +9,9 @@ import seedu.RLAD.exception.RLADException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,19 +43,24 @@ public class ModifyCommand extends Command {
             throw new RLADException("Transaction not found: " + id);
         }
 
-        // Parse field=value pairs
+        // Parse field=value pairs (supports quoted values with spaces)
         Map<String, String> updates = new HashMap<>();
         if (!updatesStr.isEmpty()) {
-            String[] pairs = updatesStr.split("\\s+");
+            List<String> pairs = splitRespectingQuotes(updatesStr);
             for (String pair : pairs) {
                 String[] kv = pair.split("=", 2);
                 if (kv.length == 2) {
                     String field = kv[0].toLowerCase();
+                    String value = kv[1];
+                    // Strip surrounding quotes from value
+                    if (value.startsWith("\"") && value.endsWith("\"") && value.length() >= 2) {
+                        value = value.substring(1, value.length() - 1);
+                    }
                     if (updates.containsKey(field)) {
                         throw new RLADException("Duplicate field: '" + field
                                 + "' was specified more than once.");
                     }
-                    updates.put(field, kv[1]);
+                    updates.put(field, value);
                 } else {
                     throw new RLADException("Invalid format. Use field=value (e.g., amount=25.00)");
                 }
@@ -135,6 +142,36 @@ public class ModifyCommand extends Command {
                         ? "(none)" : t.getCategory(),
                 (t.getDescription() == null || t.getDescription().isEmpty())
                         ? "(none)" : t.getDescription());
+    }
+
+    /**
+     * Splits a string by whitespace but keeps quoted segments together.
+     * e.g. 'amount=25.00 description="Fancy chicken rice"'
+     * becomes ["amount=25.00", "description=\"Fancy chicken rice\""]
+     */
+    private List<String> splitRespectingQuotes(String input) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            if (c == '"') {
+                inQuotes = !inQuotes;
+                current.append(c);
+            } else if (c == ' ' && !inQuotes) {
+                if (current.length() > 0) {
+                    tokens.add(current.toString());
+                    current = new StringBuilder();
+                }
+            } else {
+                current.append(c);
+            }
+        }
+        if (current.length() > 0) {
+            tokens.add(current.toString());
+        }
+        return tokens;
     }
 
     @Override
