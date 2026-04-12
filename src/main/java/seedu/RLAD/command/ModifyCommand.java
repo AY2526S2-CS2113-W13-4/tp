@@ -75,7 +75,7 @@ public class ModifyCommand extends Command {
         }
 
         // Apply updates
-        String type = updates.getOrDefault("type", existing.getType());
+        String type = updates.getOrDefault("type", existing.getType()).toLowerCase();
         String category = updates.getOrDefault("category", existing.getCategory());
         String description = updates.getOrDefault("description", existing.getDescription());
         double amount = updates.containsKey("amount") ?
