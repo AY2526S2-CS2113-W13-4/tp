@@ -233,7 +233,9 @@ public class FilterCommand extends Command {
      * @return true if the transaction category matches via keyword mapping
      */
     private static boolean matchesCategoryKeyword(String transactionCategory, BudgetCategory budgetCategory) {
-        if (transactionCategory == null) return false;
+        if (transactionCategory == null) {
+            return false;
+        }
 
         // Keyword mapping for budget categories
         switch (budgetCategory) {

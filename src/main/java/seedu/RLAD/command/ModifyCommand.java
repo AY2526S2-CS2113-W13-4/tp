@@ -82,7 +82,8 @@ public class ModifyCommand extends Command {
         Map<String, String> updates = parseFieldValuePairs(tokens.subList(1, tokens.size()));
 
         if (updates.isEmpty()) {
-            throw new RLADException("No fields to update. Usage: modify <hashID> field=value [field=value ...]\nType 'help modify' for usage.");
+            throw new RLADException("No fields to update. Usage: modify <hashID> field=value [field=value ...]\n" +
+                    "Type 'help modify' for usage.");
         }
 
         // Apply updates to create new transaction
@@ -159,7 +160,8 @@ public class ModifyCommand extends Command {
         for (String pair : tokens) {
             int eqIndex = pair.indexOf('=');
             if (eqIndex <= 0 || eqIndex == pair.length() - 1) {
-                throw new RLADException("Invalid format: '" + pair + "'. Use field=value (e.g., amount=25.00)\nType 'help modify' for usage.");
+                throw new RLADException("Invalid format: '" + pair + "'. Use field=value (e.g., amount=25.00)\n" +
+                        "Type 'help modify' for usage.");
             }
             String field = pair.substring(0, eqIndex).toLowerCase();
             String value = pair.substring(eqIndex + 1);
@@ -176,7 +178,7 @@ public class ModifyCommand extends Command {
      * @return A new Transaction object with updates applied
      * @throws RLADException If any field value is invalid
      */
-    private Transaction buildUpdatedTransaction(Transaction existing, Map<String, String> updates) throws RLADException {
+    private Transaction buildUpdatedTransaction(Transaction existing,Map<String,String> updates) throws RLADException {
         String type = updates.getOrDefault("type", existing.getType());
         String category = updates.getOrDefault("category", existing.getCategory());
         String description = updates.getOrDefault("description", existing.getDescription());

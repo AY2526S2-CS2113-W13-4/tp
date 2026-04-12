@@ -183,7 +183,9 @@ public class BudgetManager {
                 .filter(t -> "debit".equalsIgnoreCase(t.getType()))
                 .filter(t -> {
                     String tCategory = t.getCategory();
-                    if (tCategory == null) return false;
+                    if (tCategory == null) {
+                        return false;
+                    }
 
                     // Direct match with display name
                     if (displayName.equalsIgnoreCase(tCategory)) {
@@ -207,7 +209,9 @@ public class BudgetManager {
      * @return true if the transaction category matches the budget category
      */
     private boolean matchesCategory(String transactionCategory, BudgetCategory budgetCategory, String displayName) {
-        if (transactionCategory == null) return false;
+        if (transactionCategory == null) {
+            return false;
+        }
 
         // Direct match with display name
         if (displayName.equalsIgnoreCase(transactionCategory)) {

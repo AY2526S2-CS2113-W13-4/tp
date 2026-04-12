@@ -99,7 +99,8 @@ public class BudgetCommand extends Command {
      */
     private void handleSet(String[] parts, BudgetManager budgetManager, Ui ui) throws RLADException {
         if (parts.length < 4) {
-            throw new RLADException("Usage: budget set <YYYY-MM> <category_code> <amount>\nType 'help budget' for details.");
+            throw new RLADException("Usage: budget set <YYYY-MM> <category_code> <amount>\n" +
+                    "Type 'help budget' for details.");
         }
 
         YearMonth month = parseMonth(parts[1]);
@@ -135,7 +136,8 @@ public class BudgetCommand extends Command {
     // ========== handleEdit METHOD ==========
     private void handleEdit(String[] parts, BudgetManager budgetManager, Ui ui) throws RLADException {
         if (parts.length < 4) {
-            throw new RLADException("Usage: budget edit <YYYY-MM> <category_code> <amount>\nType 'help budget' for details.");
+            throw new RLADException("Usage: budget edit <YYYY-MM> <category_code> <amount>\n" +
+                    "Type 'help budget' for details.");
         }
 
         YearMonth month = parseMonth(parts[1]);
@@ -333,7 +335,8 @@ public class BudgetCommand extends Command {
         try {
             return YearMonth.parse(monthStr, DateTimeFormatter.ofPattern("yyyy-MM"));
         } catch (DateTimeParseException e) {
-            throw new RLADException("Invalid month format. Use YYYY-MM (e.g., 2026-03)\nType 'help budget' for details.");
+            throw new RLADException("Invalid month format. Use YYYY-MM (e.g., 2026-03)\n" +
+                    "Type 'help budget' for details.");
         }
     }
 
@@ -345,7 +348,8 @@ public class BudgetCommand extends Command {
             }
             return code;
         } catch (NumberFormatException e) {
-            throw new RLADException("Invalid category code. Please enter a number (1-12)\nType 'help budget' for details.");
+            throw new RLADException("Invalid category code. Please enter a number (1-12)\n" +
+                    "Type 'help budget' for details.");
         }
     }
 
@@ -360,7 +364,8 @@ public class BudgetCommand extends Command {
             }
             return Math.round(amount * 100.0) / 100.0;
         } catch (NumberFormatException e) {
-            throw new RLADException("Invalid amount format. Please enter a number (e.g., 500.00)\nType 'help budget' for details.");
+            throw new RLADException("Invalid amount format. Please enter a number (e.g., 500.00)\n" +
+                    "Type 'help budget' for details.");
         }
     }
 

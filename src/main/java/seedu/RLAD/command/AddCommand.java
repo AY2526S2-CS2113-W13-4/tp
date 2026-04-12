@@ -145,7 +145,8 @@ public class AddCommand extends Command {
     private String parseAndValidateType(String typeStr) throws RLADException {
         String type = typeStr.toLowerCase();
         if (!type.equals("credit") && !type.equals("debit")) {
-            throw new RLADException("Invalid type: '" + typeStr + "'. Use 'credit' or 'debit'.\nType 'help add' for usage.");
+            throw new RLADException("Invalid type: '" + typeStr +
+                    "'. Use 'credit' or 'debit'.\nType 'help add' for usage.");
         }
         return type;
     }
@@ -155,11 +156,13 @@ public class AddCommand extends Command {
         try {
             amount = Double.parseDouble(amountStr);
         } catch (NumberFormatException e) {
-            throw new RLADException("Invalid amount: '" + amountStr + "'. Please enter a number (e.g., 15.50)\nType 'help add' for usage.");
+            throw new RLADException("Invalid amount: '" + amountStr +
+                    "'. Please enter a number (e.g., 15.50)\nType 'help add' for usage.");
         }
 
         if (Double.isNaN(amount) || Double.isInfinite(amount)) {
-            throw new RLADException("Invalid amount: '" + amountStr + "'. Please enter a number.\nType 'help add' for usage.");
+            throw new RLADException("Invalid amount: '" + amountStr +
+                    "'. Please enter a number.\nType 'help add' for usage.");
         }
 
         if (amount <= 0) {
@@ -167,7 +170,8 @@ public class AddCommand extends Command {
         }
 
         if (amount > MAX_AMOUNT) {
-            throw new RLADException(String.format("Amount cannot exceed $%,.2f. Got: $%,.2f\nType 'help add' for usage.", MAX_AMOUNT, amount));
+            throw new RLADException(String.format("Amount cannot exceed $%,.2f. Got: $%,.2f\nType 'help add' for usage."
+                    , MAX_AMOUNT, amount));
         }
 
         return Math.round(amount * 100.0) / 100.0;
@@ -177,7 +181,8 @@ public class AddCommand extends Command {
         try {
             return LocalDate.parse(dateStr, DATE_FORMATTER);
         } catch (DateTimeParseException e) {
-            throw new RLADException("Invalid date: '" + dateStr + "'. Use YYYY-MM-DD (e.g., 2026-03-01)\nType 'help add' for usage.");
+            throw new RLADException("Invalid date: '" + dateStr
+                    + "'. Use YYYY-MM-DD (e.g., 2026-03-01)\nType 'help add' for usage.");
         }
     }
 
