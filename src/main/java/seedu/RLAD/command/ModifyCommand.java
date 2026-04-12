@@ -110,7 +110,7 @@ public class ModifyCommand extends Command {
     }
 
     private String formatTransaction(Transaction t) {
-        return String.format("%s | $%.2f | %s | %s | %s",
+        return String.format("%s | $%,.2f | %s | %s | %s",
                 t.getType().toUpperCase(), t.getAmount(), t.getDate(),
                 (t.getCategory() == null || t.getCategory().isEmpty())
                         ? "(none)" : t.getCategory(),
