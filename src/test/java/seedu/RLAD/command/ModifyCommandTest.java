@@ -121,10 +121,10 @@ class ModifyCommandTest {
     }
 
     @Test
-    void execute_duplicateField_throwsException() {
+    void execute_unknownField_throwsException() {
         RLADException ex = assertThrows(RLADException.class, () ->
-                new ModifyCommand(existingId + " amount=10.00 amount=900.00").execute(manager, ui));
-        assertTrue(ex.getMessage().contains("Duplicate field"));
-        assertTrue(ex.getMessage().contains("amount"));
+                new ModifyCommand(existingId + " foo=1").execute(manager, ui));
+        assertTrue(ex.getMessage().contains("Unknown field"));
+        assertTrue(ex.getMessage().contains("foo"));
     }
 }

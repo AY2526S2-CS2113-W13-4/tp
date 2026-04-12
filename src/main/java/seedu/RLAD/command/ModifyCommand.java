@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class ModifyCommand extends Command {
 
@@ -62,6 +63,15 @@ public class ModifyCommand extends Command {
         // After parsing updates, check if there are any
         if (updates.isEmpty()) {
             throw new RLADException("No fields to update. Usage: modify <hashID> field=value [field=value ...]");
+        }
+
+        // Reject unknown field names
+        Set<String> validFields = Set.of("type", "amount", "date", "category", "description");
+        for (String key : updates.keySet()) {
+            if (!validFields.contains(key)) {
+                throw new RLADException("Unknown field: '" + key + "'. "
+                        + "Valid fields: type, amount, date, category, description");
+            }
         }
 
         // Apply updates
