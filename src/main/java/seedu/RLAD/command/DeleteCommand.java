@@ -48,8 +48,15 @@ public class DeleteCommand extends Command {
             throw new RLADException(getUsageHelp());
         }
 
-        // Clean and extract HashID case (remove any extra whitespace and make case insensitive)
-        String hashId = rawArgs.trim().toLowerCase();
+        // Validate single argument — reject extra parameters
+        String trimmed = rawArgs.trim();
+        if (trimmed.contains(" ")) {
+            throw new RLADException("Too many arguments. Usage: delete <hashID>\n"
+                    + "  Example: delete a7b2c3");
+        }
+
+        // Clean and extract HashID (make case insensitive)
+        String hashId = trimmed.toLowerCase();
 
         // Find the transaction
         Transaction toDelete = transactions.findTransaction(hashId);
