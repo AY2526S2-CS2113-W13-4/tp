@@ -247,15 +247,15 @@ public class BudgetCommand extends Command {
                 disposableProgress.getPercentage()
         ));
 
-        // TOTAL row - Fix Issue #111: Only sum category budgets, NOT including Disposable Income
+         // TOTAL row - Fix Issue #111: Only sum category budgets, NOT including Disposable Income
         double totalRemaining = totalAllocated - totalSpent;
         int totalPercentage = totalAllocated > 0 ? (int) ((totalSpent / totalAllocated) * 100) : 0;
         String totalBar = createProgressBar(totalPercentage, PROGRESS_BAR_LENGTH);
 
-        output.add(String.format("%-25s | $%,12.2f | $%,12.2f | $%,12.2f | %s %3d%%",
-                "TOTAL",
-                totalBudget,
-                totalSpentAll,
+        output.add(String.format("%-25s | $%8.2f | $%8.2f | $%8.2f | %s %3d%%",
+                "TOTAL (Budgeted Categories)",
+                totalAllocated,
+                totalSpent,
                 totalRemaining,
                 totalBar,
                 totalPercentage
