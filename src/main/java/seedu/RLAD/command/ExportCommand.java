@@ -6,6 +6,7 @@ import seedu.RLAD.Ui;
 import seedu.RLAD.exception.RLADException;
 import seedu.RLAD.storage.CsvStorageManager;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,13 +16,15 @@ import java.util.ArrayList;
 
 /**
  * Exports all transactions to a CSV file.
+ * Syntax: export [filename]
+ * If no filename is given, defaults to transactions_YYYY-MM-DD.csv in the current directory.
  */
 public class ExportCommand extends Command {
 
     /**
      * Creates a new ExportCommand.
      *
-     * @param rawArgs the raw argument string
+     * @param rawArgs the raw argument string (optional filename)
      */
     public ExportCommand(String rawArgs) {
         super(rawArgs);
@@ -29,14 +32,27 @@ public class ExportCommand extends Command {
 
     @Override
     public void execute(TransactionManager transactions, Ui ui) throws RLADException {
-        String filename = parseFilename(rawArgs);
+        String filename = rawArgs == null ? "" : rawArgs.trim();
+        if (filename.isEmpty()) {
+            filename = "transactions_"
+                    + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".csv";
+        }
 
-        Path filePath = Paths.get(filename);
-        Path dirPath = filePath.getParent();
-        if (dirPath == null) {
-            dirPath = Paths.get(".");
-        } else if (!Files.isDirectory(dirPath)) {
-            throw new RLADException("Directory does not exist: " + dirPath);
+        Path path = Paths.get(filename);
+        validateNoDataDirectory(path);
+
+        Path parent = path.getParent();
+        if (parent != null && !Files.isDirectory(parent)) {
+            boolean create = ui.askYesNo("Directory '" + parent + "' does not exist. Create it?");
+            if (!create) {
+                ui.showResult("Export cancelled.");
+                return;
+            }
+            try {
+                Files.createDirectories(parent);
+            } catch (IOException e) {
+                throw new RLADException("Failed to create directory: " + e.getMessage());
+            }
         }
 
         ArrayList<Transaction> txns = transactions.getTransactions();
@@ -45,28 +61,27 @@ public class ExportCommand extends Command {
             return;
         }
 
-        String fullPath = filePath.isAbsolute()
-                ? filePath.toString()
-                : dirPath.resolve(filePath.getFileName()).toString();
-        CsvStorageManager.exportToCsv(txns, fullPath);
-
-        ui.showResult("Exported " + txns.size() + " transactions to: " + fullPath);
+        CsvStorageManager.exportToCsv(txns, filename);
+        ui.showResult("Exported " + txns.size() + " transactions to: " + path.toAbsolutePath());
     }
 
-    private static String parseFilename(String rawArgs) {
-        String defaultName = "transactions_"
-                + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".csv";
-        if (rawArgs == null || rawArgs.isBlank()) {
-            return defaultName;
+    /**
+     * Validates that no component of the path is the reserved directory name "data".
+     *
+     * @param path the export path to check
+     * @throws RLADException if a path component is named "data"
+     */
+    private void validateNoDataDirectory(Path path) throws RLADException {
+        Path parent = path.getParent();
+        if (parent == null) {
+            return;
         }
-        return stripQuotes(rawArgs.trim());
-    }
-
-    private static String stripQuotes(String value) {
-        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
-            return value.substring(1, value.length() - 1);
+        for (Path component : parent) {
+            if (component.toString().equalsIgnoreCase("data")) {
+                throw new RLADException("'data' is a reserved directory name used for backups. "
+                        + "Please use a different directory name.");
+            }
         }
-        return value;
     }
 
     @Override

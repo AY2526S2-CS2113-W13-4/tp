@@ -11,13 +11,14 @@ import java.nio.file.Paths;
 
 /**
  * Imports transactions from a CSV file, either replacing or merging with existing data.
+ * Syntax: import &lt;filename&gt; [merge]
  */
 public class ImportCommand extends Command {
 
     /**
      * Creates a new ImportCommand.
      *
-     * @param rawArgs the raw argument string
+     * @param rawArgs the raw argument string (filename and optional merge keyword)
      */
     public ImportCommand(String rawArgs) {
         super(rawArgs);
@@ -25,23 +26,21 @@ public class ImportCommand extends Command {
 
     @Override
     public void execute(TransactionManager transactions, Ui ui) throws RLADException {
-        if (rawArgs == null || rawArgs.isBlank()) {
-            throw new RLADException("Filename is required for import. "
-                    + "Usage: import <filename> [merge]");
-        }
-
-        String[] tokens = rawArgs.trim().split("\\s+");
-        String filePath = stripQuotes(tokens[0]);
+        String args = rawArgs == null ? "" : rawArgs.trim();
 
         boolean mergeMode = false;
-        for (int i = 1; i < tokens.length; i++) {
-            if (tokens[i].equalsIgnoreCase("merge")) {
-                mergeMode = true;
-            } else {
-                throw new RLADException("Unknown argument: " + tokens[i] + ". "
-                        + "Usage: import <filename> [merge]");
-            }
+        if (args.toLowerCase().endsWith(" merge")) {
+            mergeMode = true;
+            args = args.substring(0, args.length() - " merge".length()).trim();
+        } else if (args.equalsIgnoreCase("merge")) {
+            args = "";
         }
+
+        if (args.isBlank()) {
+            throw new RLADException("Usage: import <filename> [merge]");
+        }
+
+        String filePath = args;
 
         if (!Files.exists(Paths.get(filePath))) {
             throw new RLADException("File not found: " + filePath);
@@ -51,7 +50,7 @@ public class ImportCommand extends Command {
             boolean confirmed = ui.askConfirmation(
                     "WARNING: Replace mode will delete all "
                             + transactions.getTransactionCount() + " existing transactions.\n"
-                            + "Use 'merge' to add to existing data instead.");
+                            + "Use merge to add to existing data instead.");
             if (!confirmed) {
                 ui.showResult("Import cancelled.");
                 return;
@@ -78,13 +77,6 @@ public class ImportCommand extends Command {
 
         ui.showResult("Import complete: " + result.getSuccessCount() + " succeeded, "
                 + result.getFailCount() + " failed.");
-    }
-
-    private static String stripQuotes(String value) {
-        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
-            return value.substring(1, value.length() - 1);
-        }
-        return value;
     }
 
     @Override

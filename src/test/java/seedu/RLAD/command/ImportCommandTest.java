@@ -125,8 +125,8 @@ class ImportCommandTest {
 
     @Test
     void hasValidArgs_alwaysTrue() {
-        assertEquals(true, new ImportCommand("test.csv").hasValidArgs());
-        assertEquals(true, new ImportCommand("test.csv merge").hasValidArgs());
+        assertEquals(true, new ImportCommand("backup.csv").hasValidArgs());
+        assertEquals(true, new ImportCommand("backup.csv merge").hasValidArgs());
         assertEquals(true, new ImportCommand("").hasValidArgs());
     }
 
@@ -135,15 +135,14 @@ class ImportCommandTest {
         Ui ui = createUiWithInput("");
         ImportCommand cmd = new ImportCommand("");
         RLADException ex = assertThrows(RLADException.class, () -> cmd.execute(tm, ui));
-        assertTrue(ex.getMessage().contains("Filename is required"));
+        assertTrue(ex.getMessage().contains("Usage: import"));
     }
 
     @Test
-    void execute_unknownArgument_throwsException() throws Exception {
-        Path file = createValidCsv("unknown.csv");
+    void execute_onlyMergeKeyword_throwsException() {
         Ui ui = createUiWithInput("");
-        ImportCommand cmd = new ImportCommand(file + " bogus");
+        ImportCommand cmd = new ImportCommand("merge");
         RLADException ex = assertThrows(RLADException.class, () -> cmd.execute(tm, ui));
-        assertTrue(ex.getMessage().contains("Unknown argument"));
+        assertTrue(ex.getMessage().contains("Usage: import"));
     }
 }
