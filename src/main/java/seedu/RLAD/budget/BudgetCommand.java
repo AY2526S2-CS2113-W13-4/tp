@@ -252,14 +252,22 @@ public class BudgetCommand extends Command {
         int totalPercentage = totalAllocated > 0 ? (int) ((totalSpent / totalAllocated) * 100) : 0;
         String totalBar = createProgressBar(totalPercentage, PROGRESS_BAR_LENGTH);
 
-        output.add(String.format("%-25s | $%,12.2f | $%,12.2f | $%,12.2f | %s %3d%%",
+        String remainingDisplay = totalRemaining < 0
+                ? String.format("-$%,.2f", Math.abs(totalRemaining))
+                : String.format("$%,.2f", totalRemaining);
+
+        output.add(String.format("%-25s | $%,12.2f | $%,12.2f | %14s | %s %3d%%",
                 "TOTAL (Budgeted Categories)",
                 totalAllocated,
                 totalSpent,
-                totalRemaining,
+                remainingDisplay,
                 totalBar,
                 totalPercentage
         ));
+        if (totalRemaining < 0) {
+            output.add("⚠ Total spending exceeds budget by "
+                    + String.format("$%,.2f", Math.abs(totalRemaining)));
+        }
 
         output.forEach(ui::showResult);
     }
