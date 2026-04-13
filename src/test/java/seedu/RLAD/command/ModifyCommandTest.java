@@ -126,4 +126,18 @@ class ModifyCommandTest {
                 new ModifyCommand(existingId + " amount=0.001").execute(manager, ui));
         assertTrue(ex.getMessage().contains("$0.00") || ex.getMessage().contains("0.01"));
     }
+
+    @Test
+    void execute_typeUppercase_updatesCorrectly() throws Exception {
+        new ModifyCommand(existingId + " type=CREDIT").execute(manager, ui);
+        Transaction updated = manager.findTransaction(existingId);
+        assertEquals("credit", updated.getType());
+    }
+
+    @Test
+    void execute_typeMixedCase_updatesCorrectly() throws Exception {
+        new ModifyCommand(existingId + " type=Debit").execute(manager, ui);
+        Transaction updated = manager.findTransaction(existingId);
+        assertEquals("debit", updated.getType());
+    }
 }
