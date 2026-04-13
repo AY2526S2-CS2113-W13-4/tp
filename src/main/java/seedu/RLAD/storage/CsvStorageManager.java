@@ -189,10 +189,6 @@ public class CsvStorageManager {
         if (field == null) {
             return "";
         }
-        // Prevent CSV formula injection for fields starting with =, @, +, -
-        if (!field.isEmpty() && "=@+-".indexOf(field.charAt(0)) >= 0) {
-            field = "\t" + field;
-        }
         if (field.contains(",") || field.contains("\"") || field.contains("\n")) {
             return "\"" + field.replace("\"", "\"\"") + "\"";
         }
