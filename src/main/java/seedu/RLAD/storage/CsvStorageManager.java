@@ -158,6 +158,7 @@ public class CsvStorageManager {
         } catch (NumberFormatException e) {
             throw new RLADException("invalid amount '" + columns[3].trim() + "'");
         }
+       
         if (amount < 0 || Double.isNaN(amount) || Double.isInfinite(amount)) {
             throw new RLADException("amount must be a finite non-negative number: " + columns[3].trim());
         }
