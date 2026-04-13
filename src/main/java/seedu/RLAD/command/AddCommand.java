@@ -238,3 +238,4 @@ public class AddCommand extends Command {
         return rawArgs != null && !rawArgs.trim().isEmpty();
     }
 }
+

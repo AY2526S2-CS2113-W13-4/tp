@@ -297,3 +297,4 @@ public class ModifyCommand extends Command {
         return rawArgs != null && !rawArgs.trim().isEmpty();
     }
 }
+
