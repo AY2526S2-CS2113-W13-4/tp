@@ -10,19 +10,20 @@ RLAD helps you track income and expenses, set budget goals, and gain financial i
 
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| 📝 **Add Transactions** | Record credits (income) and debits (expenses) with intuitive position-based syntax |
-| 🔍 **List & Filter** | View transactions with powerful filtering by type, category, date, and amount |
-| ✏️ **Modify Entries** | Update any transaction field using simple `field=value` syntax |
-| 🗑️ **Delete Records** | Remove transactions by their unique HashID |
-| 📊 **Financial Summary** | Get instant breakdowns of income, expenses, and category totals |
-| 🎯 **Budget Management** | Set monthly budgets across 12 categories with visual progress tracking |
-| 📈 **Yearly Overview** | View annual trends with ASCII progress bars and category analysis |
-| ⚠️ **Smart Notifications** | Receive alerts at 80%, 90%, and 100% of budget limits |
-| 💾 **CSV Export/Import** | Backup, restore, or analyze data in Excel/Google Sheets |
-| 🔄 **Auto-Save** | Automatic crash recovery - never lose your data |
-| 🎨 **Clean Interface** | Formatted tables and visual indicators for easy reading |
+| Feature | Description                                                                             |
+|---------|-----------------------------------------------------------------------------------------|
+| 📝 **Add Transactions** | Record credits (income) and debits (expenses) with intuitive position-based syntax      |
+| 🛡️ **Robust Validation** | Guard clauses against numerical categories and "greedy" parsing for multi-word entries. |
+| 🔍 **List & Filter** | View transactions with powerful filtering by type, category, date, and amount           |
+| ✏️ **Modify Entries** | Update any transaction field using simple `field=value` syntax                          |
+| 🗑️ **Delete Records** | Remove transactions by their unique HashID                                              |
+| 📊 **Financial Summary** | Get instant breakdowns of income, expenses, and category totals                         |
+| 🎯 **Budget Management** | Set monthly budgets across 12 categories with visual progress tracking                  |
+| 📈 **Yearly Overview** | View annual trends with ASCII progress bars and category analysis                       |
+| ⚠️ **Smart Notifications** | Receive alerts at 80%, 90%, and 100% of budget limits                                   |
+| 💾 **CSV Export/Import** | Backup, restore, or analyze data in Excel/Google Sheets                                 |
+| 🔄 **Auto-Save** | Automatic crash recovery - never lose your data                                         |
+| 🎨 **Clean Interface** | Formatted tables and visual indicators for easy reading                                 |
 
 ## 🚀 Quick Start
 
@@ -197,6 +198,7 @@ src/main/java/seedu/RLAD/
 ├── command/
 │   ├── Command.java               # Abstract base command
 │   ├── AddCommand.java            # Position-based transaction creation
+│   ├── AmountValidator.java       # Shared numeric validation and rounding for amounts
 │   ├── DeleteCommand.java         # HashID-based deletion
 │   ├── ModifyCommand.java         # Field=value updates
 │   ├── ListCommand.java           # Filtered & sorted display
