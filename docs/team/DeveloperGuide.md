@@ -424,12 +424,11 @@ classDiagram
 
     ListCommand ..> FilterCommand : uses
 ```
-<div style="page-break-after: always;"></div>
 
 #### Storage Component
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontSize": "16px", "fontFamily": "arial", "lineColor": "#333333", "textColor": "#000000", "actorTextColor": "#000000", "signalColor": "#333333", "signalTextColor": "#000000", "noteBkgColor": "#fff5ad", "noteTextColor": "#000000", "labelTextColor": "#000000"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "8px", "fontFamily": "arial", "lineColor": "#333333", "textColor": "#000000", "actorTextColor": "#000000", "signalColor": "#333333", "signalTextColor": "#000000", "noteBkgColor": "#fff5ad", "noteTextColor": "#000000", "labelTextColor": "#000000"}}}%%
 classDiagram
     class CsvStorageManager {
         +exportToCsv(List~Transaction~, String, String) String
@@ -1239,7 +1238,7 @@ The description field is last, so pipes within descriptions are preserved (the p
 Supported commands: `add`, `modify`, `delete`, `list`, `search`, `sort`, `summarize`, `budget`, `export`, `import`, `clear`, `help`, `exit`. Unrecognised command names produce an error message.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontSize": "16px", "fontFamily": "arial", "lineColor": "#333333", "textColor": "#000000", "actorTextColor": "#000000", "signalColor": "#333333", "signalTextColor": "#000000", "noteBkgColor": "#fff5ad", "noteTextColor": "#000000", "labelTextColor": "#000000"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontSize": "8px", "fontFamily": "arial", "lineColor": "#333333", "textColor": "#000000", "actorTextColor": "#000000", "signalColor": "#333333", "signalTextColor": "#000000", "noteBkgColor": "#fff5ad", "noteTextColor": "#000000", "labelTextColor": "#000000"}}}%%
 sequenceDiagram
     participant User
     participant HC as HelpCommand
