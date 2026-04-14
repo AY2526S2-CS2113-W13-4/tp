@@ -44,11 +44,93 @@ public class ModifyCommand extends Command {
                     + "Usage: modify <hashID> field=value [field=value ...]");
         }
 
+        // Check if any fields would actually change
+        Map<String, String> actualChanges = filterUnchangedFields(existing, updates);
+
+        if (actualChanges.isEmpty()) {
+            throw new RLADException("No changes detected. All provided fields already have the same values.\n"
+                    + "Transaction ID: " + id + "\n"
+                    + "Current: " + formatTransaction(existing));
+        }
+
         Transaction updated = buildUpdatedTransaction(existing, updates);
 
         transactions.updateTransaction(id, updated);
         ui.showResult(String.format("✅ Transaction updated!\n   ID: %s\n   New: %s",
                 id, formatTransaction(updated)));
+    }
+
+    /**
+     * Filters out updates that would not actually change the transaction.
+     * Compares the proposed updates against the existing transaction values.
+     *
+     * @param existing The current transaction
+     * @param updates The proposed updates from the user
+     * @return A map containing only updates that would result in a change
+     * @throws RLADException If type validation fails
+     */
+    private Map<String, String> filterUnchangedFields(Transaction existing, Map<String, String> updates)
+            throws RLADException {
+        Map<String, String> actualChanges = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : updates.entrySet()) {
+            String field = entry.getKey();
+            String newValue = entry.getValue();
+
+            switch (field) {
+            case "type":
+                String newType = newValue.toLowerCase();
+                if (!newType.equals("credit") && !newType.equals("debit")) {
+                    throw new RLADException("Type must be 'credit' or 'debit'.");
+                }
+                if (!existing.getType().equalsIgnoreCase(newType)) {
+                    actualChanges.put(field, newValue);
+                }
+                break;
+
+            case "amount":
+                double newAmount = AmountValidator.parseAndValidate(newValue);
+                if (Math.abs(existing.getAmount() - newAmount) > 0.0001) { // Compare with tolerance
+                    actualChanges.put(field, newValue);
+                }
+                break;
+
+            case "date":
+                LocalDate newDate;
+                try {
+                    newDate = LocalDate.parse(newValue.trim());
+                } catch (DateTimeParseException e) {
+                    throw new RLADException("Invalid date format. Use YYYY-MM-DD.");
+                }
+                if (!existing.getDate().equals(newDate)) {
+                    actualChanges.put(field, newValue);
+                }
+                break;
+
+            case "category":
+                String existingCategory = existing.getCategory() == null ? "" : existing.getCategory();
+                String newCategory = newValue == null ? "" : newValue;
+                if (!existingCategory.equals(newCategory)) {
+                    actualChanges.put(field, newValue);
+                }
+                break;
+
+            case "description":
+                String existingDesc = existing.getDescription() == null ? "" : existing.getDescription();
+                String newDesc = newValue == null ? "" : newValue;
+                if (!existingDesc.equals(newDesc)) {
+                    actualChanges.put(field, newValue);
+                }
+                break;
+
+            default:
+                // Unknown field will be caught in buildUpdatedTransaction
+                actualChanges.put(field, newValue);
+                break;
+            }
+        }
+
+        return actualChanges;
     }
 
     private List<String> parseWithQuotes(String input) {
