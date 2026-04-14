@@ -203,13 +203,13 @@ modify <hashID> [field=value ...]
 
 **Modifiable fields:**
 
-| Field         | Example value           |
-|---------------|-------------------------|
-| `type`        | `credit` or `debit`     |
-| `amount`      | `25.00`                 |
-| `date`        | `2026-03-10`            |
-| `category`    | `transport`             |
-| `description` | `"Updated description"` |
+| Field         | Example value                                                               |
+|---------------|-----------------------------------------------------------------------------|
+| `type`        | `credit` or `debit`                                                         |
+| `amount`      | `25.00`                                                                     |
+| `date`        | `2026-03-10`                                                                |
+| `category`    | `transport` / `"bus transportation"` (Use quotes for multi-word categories) |
+| `description` | `"Updated description"`                                                     |
 
 **Examples:**
 ```
@@ -223,7 +223,7 @@ modify a7b2c3 amount=20.00 description="Fancy chicken rice"
 modify a7b2c3 category=transport date=2026-03-06
 ```
 
-> **Note:** Fields not specified in the command remain unchanged.
+> **Note:** Fields not specified in the command remain unchanged. 
 
 ---
 
