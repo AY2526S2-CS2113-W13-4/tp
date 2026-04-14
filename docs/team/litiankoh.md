@@ -16,6 +16,7 @@ My primary role was to architect and implement the **budgeting feature**, which 
 **Code contributed:** [RepoSense Link](https://nus-cs2113-ay2526-s2.github.io/tp-dashboard/?search=litiankoh&breakdown=true)
 
 ---
+
 ### **Enhancements implemented**
 
 Here is a summary of my key enhancements to RLAD:
@@ -41,14 +42,18 @@ add --type debit --amount 15.50 --date 2026-03-05 --category food --description 
 ```
 add debit 15.50 2026-03-05 "food" "Chicken rice"
 ```
+
 ---
+
 ### **Contributions to the User Guide (UG)**
 
 I authored and maintained the documentation for the `budget` feature, ensuring it was clear, comprehensive, and user-friendly. My contributions include:
 
 - **Added UG for BudgetManager:** Wrote detailed sections for all budget commands (`set`, `view`, `edit`, `delete`) with examples, input formats, and expected outputs.
 - **Added UG for Budget Notification Logic:** Documented the progressive notification system (80%, 90%, 100% thresholds), clearly differentiating between Savings (positive) and other categories (warnings).
+
 ---
+
 ### **Contributions to the Developer Guide (DG)**
 
 | Section | Contribution                                                                                                                                                        |
