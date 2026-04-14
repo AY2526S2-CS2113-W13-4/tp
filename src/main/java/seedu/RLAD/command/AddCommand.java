@@ -1,4 +1,3 @@
-// AddCommand.java - Fixed
 package seedu.RLAD.command;
 
 import seedu.RLAD.TransactionManager;
@@ -16,7 +15,6 @@ public class AddCommand extends Command {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-
     public AddCommand(String rawArgs) {
         super(rawArgs);
     }
@@ -27,15 +25,12 @@ public class AddCommand extends Command {
             throw new RLADException(getUsageHelp());
         }
 
-        // Check for unclosed quotes first (Issue #98)
         if (hasUnclosedQuotes(rawArgs)) {
             throw new RLADException("Unclosed quote in command. Missing closing quote (\").\n" +
                     "Use quotes for multi-word descriptions or categories.\n" +
-                    "Example: add debit 15.50 2026-04-12 food \"Lunch at hawker\"\n" +
-                    "Type 'help add' for usage.");
+                    "Example: add debit 15.50 2026-04-12 food \"Lunch at hawker\"");
         }
 
-        // Parse with quote support for both category and description
         List<String> parts = parseWithQuotes(rawArgs.trim());
 
         if (parts.size() < 3) {
@@ -43,7 +38,8 @@ public class AddCommand extends Command {
         }
 
         String type = parseAndValidateType(parts.get(0));
-        double amount = parseAndValidateAmount(parts.get(1));
+        // Using your shared AmountValidator
+        double amount = AmountValidator.parseAndValidate(parts.get(1));
         LocalDate date = parseAndValidateDate(parts.get(2));
 
         String category = null;
@@ -51,15 +47,14 @@ public class AddCommand extends Command {
 
         if (parts.size() >= 4) {
             category = parts.get(3);
+            // Guard clause to prevent purely numerical categories
+            if (category != null && category.trim().matches("-?\\d+(\\.\\d+)?")) {
+                throw new RLADException("Category cannot be purely numerical.\n" +
+                        "Mixed alphanumerics (e.g., '1st Meeting') are acceptable.");
+            }
         }
         if (parts.size() >= 5) {
             description = parts.get(4);
-            // Guard clause to prevent purely numerical categories
-            if (category.trim().matches("-?\\d+(\\.\\d+)?")) {
-                throw new RLADException("Category cannot be purely numerical.\n" +
-                        "Mixed alphanumerics (e.g., '1st Meeting') are acceptable.\n" +
-                        "Type 'help add' for usage.");
-            }
         }
 
         Transaction newTransaction = new Transaction(type, category, amount, date, description);
@@ -68,39 +63,6 @@ public class AddCommand extends Command {
         displaySuccessMessage(ui, newTransaction, category, description);
     }
 
-    /**
-     * Checks for unclosed quotes in the input string.
-     *
-     * <p>This method counts the number of double quote characters in the input.
-     * If the count is odd, there is an unclosed quote. This validation prevents
-     * silent data loss when users forget to close a quoted string.
-     *
-     * @param input The input string to check
-     * @return true if there is an unclosed quote (odd number of quotes), false otherwise
-     */
-    private boolean hasUnclosedQuotes(String input) {
-        int quoteCount = 0;
-        for (char c : input.toCharArray()) {
-            if (c == '"') {
-                quoteCount++;
-            }
-        }
-        return quoteCount % 2 != 0;
-    }
-
-    /**
-     * Parses a string with support for quoted values (preserves spaces within quotes).
-     *
-     * <p>This method tokenizes the input string while respecting double quotes.
-     * Text inside quotes is treated as a single token even if it contains spaces.
-     * Both categories and descriptions can be quoted for multi-word values.
-     *
-     * <p>Example: {@code debit 15.50 2026-04-12 "health insurance" "Monthly payment"}
-     * <br>Returns: {@code ["debit", "15.50", "2026-04-12", "health insurance", "Monthly payment"]}
-     *
-     * @param input The input string to parse
-     * @return A list of tokens with quotes removed from quoted sections
-     */
     private List<String> parseWithQuotes(String input) {
         List<String> tokens = new ArrayList<>();
         StringBuilder current = new StringBuilder();
@@ -113,12 +75,7 @@ public class AddCommand extends Command {
                 current.append(c);
             } else if (c == ' ' && !inQuotes) {
                 if (current.length() > 0) {
-                    String token = current.toString();
-                    // Remove surrounding quotes if present
-                    if (token.startsWith("\"") && token.endsWith("\"")) {
-                        token = token.substring(1, token.length() - 1);
-                    }
-                    tokens.add(token);
+                    tokens.add(removeSurroundingQuotes(current.toString()));
                     current = new StringBuilder();
                 }
             } else {
@@ -126,84 +83,57 @@ public class AddCommand extends Command {
             }
         }
         if (current.length() > 0) {
-            String token = current.toString();
-            if (token.startsWith("\"") && token.endsWith("\"")) {
-                token = token.substring(1, token.length() - 1);
-            }
-            tokens.add(token);
+            tokens.add(removeSurroundingQuotes(current.toString()));
         }
         return tokens;
     }
 
-    /**
-     * Removes surrounding double quotes from a string if present.
-     *
-     * @param token The token that may have surrounding quotes
-     * @return The token without surrounding quotes, or the original if no quotes
-     */
     private String removeSurroundingQuotes(String token) {
-        if (token.startsWith("\"") && token.endsWith("\"")) {
-            return token.substring(1, token.length() - 1);
+        if (token == null) return null;
+        String cleaned = token.trim();
+        while (cleaned.length() >= 2 && cleaned.startsWith("\"") && cleaned.endsWith("\"")) {
+            cleaned = cleaned.substring(1, cleaned.length() - 1);
         }
-        return token;
+        return cleaned;
+    }
+
+    private boolean hasUnclosedQuotes(String input) {
+        int quoteCount = 0;
+        for (char c : input.toCharArray()) {
+            if (c == '"') quoteCount++;
+        }
+        return quoteCount % 2 != 0;
     }
 
     private String parseAndValidateType(String typeStr) throws RLADException {
         String type = typeStr.toLowerCase();
         if (!type.equals("credit") && !type.equals("debit")) {
-            throw new RLADException("Invalid type: '" + typeStr +
-                    "'. Use 'credit' or 'debit'.\nType 'help add' for usage.");
+            throw new RLADException("Invalid type: '" + typeStr + "'. Use 'credit' or 'debit'.");
         }
         return type;
-    }
-
-    private double parseAndValidateAmount(String amountStr) throws RLADException {
-        return AmountValidator.parseAndValidate(amountStr);
     }
 
     private LocalDate parseAndValidateDate(String dateStr) throws RLADException {
         try {
             return LocalDate.parse(dateStr, DATE_FORMATTER);
         } catch (DateTimeParseException e) {
-            throw new RLADException("Invalid date: '" + dateStr
-                    + "'. Use YYYY-MM-DD (e.g., 2026-03-01)\nType 'help add' for usage.");
+            throw new RLADException("Invalid date: '" + dateStr + "'. Use YYYY-MM-DD.");
         }
     }
 
     private void displaySuccessMessage(Ui ui, Transaction transaction, String category, String description) {
-        String categoryDisplay = (category == null || category.trim().isEmpty()) ? "(none)" : category;
-        String descriptionDisplay = (description == null || description.trim().isEmpty())
-                ? "(none)" : "\"" + description + "\"";
+        String cat = (category == null || category.trim().isEmpty()) ? "(none)" : category;
+        String desc = (description == null || description.trim().isEmpty()) ? "(none)" : "\"" + description + "\"";
 
-        String successMessage = String.format(
-                "✅ Transaction added successfully!\n" +
-                        "   ID: %s\n" +
-                        "   %s: $%,.2f on %s\n" +
-                        "   Category: %s\n" +
-                        "   Description: %s",
-                transaction.getHashId(),
-                transaction.getType().toUpperCase(),
-                transaction.getAmount(),
-                transaction.getDate(),
-                categoryDisplay,
-                descriptionDisplay
-        );
-        ui.showResult(successMessage);
+        ui.showResult(String.format(
+                "✅ Transaction added successfully!\n   ID: %s\n   %s: $%,.2f on %s\n   Category: %s\n   Description: %s",
+                transaction.getHashId(), transaction.getType().toUpperCase(),
+                transaction.getAmount(), transaction.getDate(), cat, desc
+        ));
     }
 
     private String getUsageHelp() {
-        return "Usage: add <type> <amount> <date> [category] [description]\n" +
-                "  type: credit or debit\n" +
-                "  amount: positive number (max $10,000,000)\n" +
-                "  date: YYYY-MM-DD\n" +
-                "  category: optional (use quotes for multi-word: \"health insurance\")\n" +
-                "  description: optional (use quotes for spaces: \"Lunch at hawker\")\n\n" +
-                "Examples:\n" +
-                "  add credit 3000 2026-03-01 salary \"March salary\"\n" +
-                "  add debit 15.50 2026-03-05 food \"Chicken rice\"\n" +
-                "  add debit 5.00 2026-03-06\n" +
-                "  add debit 10.50 2026-04-12 \"health insurance\" \"Monthly payment\"\n" +
-                "Type 'help add' for more details.";
+        return "Usage: add <type> <amount> <date> [category] [description]";
     }
 
     @Override

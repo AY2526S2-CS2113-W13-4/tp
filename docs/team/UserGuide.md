@@ -364,7 +364,7 @@ budget yearly [YYYY]
 ```
 budget set 2026-03 1 500        # Set a $500 food budget for March 2026
 budget view 2026-03             # View all March 2026 budgets
-budet view                      # View all monthly budgets across valid years
+budget view                      # View all monthly budgets across valid years
 budget edit 2026-03 1 600       # Increase the March food budget to $600
 budget delete 2026-03 1         # Remove the March food budget
 budget yearly 2026              # View all budgets across 2026
