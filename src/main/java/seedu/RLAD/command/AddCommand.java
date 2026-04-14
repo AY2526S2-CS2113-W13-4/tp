@@ -70,9 +70,11 @@ public class AddCommand extends Command {
 
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
-            if (c == '"') {
+            // Check for both straight quotes (") and curly quotes (“ ”)
+            if (c == '"' || c == '“' || c == '”') {
                 inQuotes = !inQuotes;
-                current.append(c);
+                // Don't add the quote character to the token
+                continue;
             } else if (c == ' ' && !inQuotes) {
                 if (current.length() > 0) {
                     tokens.add(removeSurroundingQuotes(current.toString()));
@@ -93,7 +95,10 @@ public class AddCommand extends Command {
             return null;
         }
         String cleaned = token.trim();
-        while (cleaned.length() >= 2 && cleaned.startsWith("\"") && cleaned.endsWith("\"")) {
+        // Remove straight quotes or curly quotes from both ends
+        while (cleaned.length() >= 2 &&
+                ((cleaned.startsWith("\"") && cleaned.endsWith("\"")) ||
+                        (cleaned.startsWith("“") && cleaned.endsWith("”")))) {
             cleaned = cleaned.substring(1, cleaned.length() - 1);
         }
         return cleaned;
@@ -102,7 +107,7 @@ public class AddCommand extends Command {
     private boolean hasUnclosedQuotes(String input) {
         int quoteCount = 0;
         for (char c : input.toCharArray()) {
-            if (c == '"') {
+            if (c == '"' || c == '“' || c == '”') {
                 quoteCount++;
             }
         }
@@ -139,7 +144,8 @@ public class AddCommand extends Command {
     }
 
     private String getUsageHelp() {
-        return "Usage: add <type> <amount> <date> [category] [description]";
+        return "Usage: add <type> <amount> <date> [category] [description]\n"
+                + "Use straight double-quotes (\") for multi-word values.";
     }
 
     @Override
