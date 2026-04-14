@@ -49,7 +49,7 @@ Record Losses And Debt (RLAD) is a lightweight, terminal-native personal finance
    exit
    ```
 
-For the full command reference, see the [User Guide](team/UserGuide.md).
+For the full command reference, see the [User Guide](UserGuide.md).
 
 ---
 
